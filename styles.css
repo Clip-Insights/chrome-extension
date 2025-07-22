@@ -1,0 +1,957 @@
+/* #clipinsights__mainContent{
+  margin-top: 10px;
+} */
+
+
+#clipinsights__screenshotNoteContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+#clipinsights__screenshotNoteContainer::-webkit-scrollbar-track {
+  background: #3D52A1;
+  border-radius: 20px;
+}
+
+#clipinsights__screenshotNoteContainer::-webkit-scrollbar-thumb {
+  background-color: #3D52A1;
+  border-radius: 20px;
+  border: 2px solid #3D52A1;
+}
+
+#clipinsights__screenshotNoteContainer::-webkit-scrollbar-thumb:hover {
+  background-color: #ddd;
+  border-radius: 20px;
+}
+
+/* For Firefox */
+#clipinsights__screenshotNoteContainer {
+  scrollbar-width: thin;
+  scrollbar-color: #3D52A1 #f4f4f9;
+}
+
+#clip-insights-notepad::-webkit-scrollbar {
+  width: 8px;
+}
+
+#clip-insights-notepad::-webkit-scrollbar-track {
+  background: #3D52A1;
+  border-radius: 20px;
+}
+
+#clip-insights-notepad::-webkit-scrollbar-thumb {
+  background-color: #3D52A1;
+  border-radius: 20px;
+  border: 2px solid #3D52A1;
+}
+
+#clip-insights-notepad::-webkit-scrollbar-thumb:hover {
+  background-color: #ddd;
+  border-radius: 20px;
+}
+
+/* For Firefox */
+#clip-insights-notepad {
+  scrollbar-width: thin;
+  scrollbar-color: #3D52A1 #f4f4f9;
+}
+
+#clipinsights__summary::-webkit-scrollbar {
+  width: 8px;
+}
+
+#clipinsights__summary::-webkit-scrollbar-track {
+  background: #f4f4f9;
+  border-radius: 20px;
+}
+
+#clipinsights__summary::-webkit-scrollbar-thumb {
+  background-color: #3D52A1;
+  border-radius: 20px;
+  border: 2px solid #f4f4f9;
+}
+
+#clipinsights__summary::-webkit-scrollbar-thumb:hover {
+  background-color: #ddd;
+  border-radius: 20px;
+}
+
+/* For Firefox */
+#clipinsights__summary {
+  scrollbar-width: thin;
+  scrollbar-color: #3D52A1 #f4f4f9;
+}
+
+#clipinsights__body {
+  overflow: hidden;
+  /* Ensure no overflow breaks the rounded corners */
+  width: 320px;
+  font-family: "Roboto", sans-serif;
+  background-color: #ffffff;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+  border-radius: 16px;
+  /* Smooth rounded corners */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  -webkit-border-radius: 15px;
+  -moz-border-radius: 15px;
+}
+
+#clipinsights__top-container {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#clipinsights__mainHeading {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  /* background: linear-gradient(to right, #05EAA7 0%, #4255FF 80%, #4255FF 100%); */
+  background-color :#26283B;
+  gap: 10px;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: left;
+  font-size: 1.5em;
+  font-weight: bold;
+  /* Adjust font size as needed */
+}
+
+#clipinsights__logo{
+  text-decoration: none;
+}
+
+
+.clipinsights__button {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+/* Button container for summary, clear, save */
+.clipinsights__button-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+/* 
+#clipinsights__summaryBtn,
+#clipinsights__clearBtn,
+#clipinsights__saveBtn {
+  background-color: #4255ff;
+
+  flex: 1;
+  margin-right: 4px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+#clipinsights__summaryBtn:hover,
+#clipinsights__clearBtn:hover,
+#clipinsights__saveBtn:hover {
+  background-color: #db6135;
+} */
+
+.clipinsights__button-container button:last-child {
+  margin-right: 0;
+  /* Removes the extra margin on the last button */
+}
+
+#clipinsights__clearBtn,
+#clipinsights__saveBtn,
+#clipinsights__uploadBtn {
+  justify-content: center;
+  align-items: center;
+  padding: 10px 10px !important;
+  /* width: 102px; */
+}
+/* #clipinsights__summaryBtn {
+  padding: 10px 16px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+#clipinsights__addNoteBtn {
+  padding: 10px 16px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+} */
+
+#clipinsights__screenshotBtn,
+#clipinsights__summaryBtn,
+#clipinsights__clearBtn,
+#clipinsights__saveBtn,
+#clipinsights__uploadBtn,
+#clipinsights__addNoteBtn,
+#clipinsights__keypointsBtn,
+#clipinsights__chatBtn,
+#clipinsights__loginBtn,
+#clipinsights__backBtn,
+#clipinsights__submitLogin  {
+  padding: 10px 6px;
+  gap: 5px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  color: #26283B;
+  height: 36px;
+  background-color: white;
+  /* border: 1px solid #4255FF; */
+}
+#clipinsights__chatBtn{
+  padding: 15px 10px;
+}
+
+#clipinsights__screenshotBtn:hover,
+#clipinsights__summaryBtn:hover,
+#clipinsights__clearBtn:hover,
+#clipinsights__saveBtn:hover,
+#clipinsights__uploadBtn:hover,
+#clipinsights__addNoteBtn:hover,
+#clipinsights__keypointsBtn:hover,
+#clipinsights__chatBtn:hover,
+#clipinsights__loginBtn:hover,
+#clipinsights__backBtn:hover,
+#clipinsights__submitLogin:hover {
+  color: #4255FF;
+  filter: brightness(100%);
+  border-color: #6c757d;
+  background-color: #EDEFFF;
+  transition: background-color 0.1s ease;
+}
+
+/* #clipinsights__addNoteBtn:hover svg{
+  stroke: #4255FF;
+}
+#clipinsights__loginBtn:hover svg g[id="Dribbble-Light-Preview"]{
+  fill:#4255FF;
+} */
+
+/* #clipinsights__addNoteBtn:hover {
+  border-color: #6c757d;
+  background-color: #05eaa7;
+  transition: background-color 0.1s ease;
+} */
+
+.clipinsights__input-container {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+/* input[type="text"] {
+  flex-grow: 1;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  margin-right: 4px;
+} */
+
+/* input[type="text"]:focus {
+  border-color: #4255FF;
+} */
+
+
+#clipinsights__noteInput::placeholder {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #888;
+}
+
+#clipinsights__noteInput {
+  font-family: Arial, sans-serif;
+  color: #333;
+  flex-grow: 1;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  margin-right: 4px;
+  resize: none; /* Prevent manual resizing */
+  max-height: 2em; /* Limit to approximately two lines */
+  line-height: 1.5em; /* Ensures two lines within 2em */
+  /* Hide scrollbar for WebKit browsers (Chrome, Safari) */
+  -webkit-appearance: none;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for WebKit browsers */
+.clipinsights__noteInput::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.clipinsights__noteInput {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+#clipinsights__noteInput:focus {
+  outline: none;
+  border-color: #4255FF;
+}
+
+.clipinsights__h4 {
+  font-size: 16px;
+  color: #555;
+  padding-bottom: 5px;
+}
+
+#clipinsights__screenshotNoteContainer {
+  margin-top: 15px;
+  height: 268px;
+  overflow-y: auto;
+  background-color: white;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* Container styling */
+#clipinsights__summaryAndBulletContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background-color: #fefefe;
+  /* Off-white for a soft feel */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* Subtle shadow */
+  margin-top: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'Roboto', sans-serif;
+  /* Modern font */
+}
+
+/* Shared section styling */
+#clipinsights__keypoints,
+#clipinsights__summary {
+  padding: 16px;
+  border-radius: 8px;
+  /* background: linear-gradient(145deg, #ffffff, #f0f0f0); */
+  background-color: ghostwhite;
+  font-size: larger;
+  
+  /* Soft gradient */
+  /* Dual shadow for a lifted effect */
+  line-height: 1.6;
+  position: relative;
+  /* transition: transform 0.3s ease, box-shadow 0.3s ease; */
+}
+
+/* Add a scale and glow on hover */
+#clipinsights__keypoints:hover,
+#clipinsights__summary:hover {
+  /* transform: scale(1.03); */
+  /* box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2), -5px -5px 15px rgba(255, 255, 255, 0.5); */
+  /* Enhanced shadow on hover */
+}
+
+/* Bullet points section */
+#clipinsights__keypoints {
+  border-left: 6px solid #3e54a3bf;
+  animation: fadeInLeft 0.5s ease;
+}
+
+#clipinsights__keypoints::before {
+  /* Icon and title */
+  font-weight: bold;
+  color: #007acc;
+  display: block;
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  /* Separator line */
+  padding-bottom: 4px;
+}
+
+/* Summary section */
+#clipinsights__summary {
+  border-left: 6px solid #3e54a3bf;
+  /* animation: fadeInRight 0.5s ease; */
+}
+
+#clipinsights__summary::before {
+  /* Icon and title */
+  font-weight: bold;
+  color: #3D52A1;
+  display: block;
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+
+/* Custom scrollbar styling */
+#clipinsights__summaryAndBulletContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+#clipinsights__summaryAndBulletContainer::-webkit-scrollbar-track {
+  background: #e0e0e0;
+  border-radius: 5px;
+}
+
+#clipinsights__summaryAndBulletContainer::-webkit-scrollbar-thumb {
+  background-color: #a0a0a0;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+#clipinsights__summaryAndBulletContainer::-webkit-scrollbar-thumb:hover {
+  background-color: #707070;
+}
+
+/* Style for the unordered list inside #summaryKeypoints */
+#clipinsights__keypoints ul.styled-keypoints {
+  padding-left: 5px;
+  list-style-type: none;
+  /* Remove default keypoints */
+  margin: 0;
+}
+
+/* Style for each list item */
+#clipinsights__keypoints ul.styled-keypoints li {
+  position: relative;
+  padding-left: 10px;
+  /* Space for custom bullet icon */
+  margin-bottom: 8px;
+  font-size: 1em;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Custom bullet icon */
+#clipinsights__keypoints ul.styled-keypoints li::before {
+  content: "•";
+  /* Custom bullet character */
+  position: absolute;
+  left: 0;
+  color: #007acc;
+  /* Bullet color */
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+/* Additional styles for the styled-keypoints class */
+/* .clipinsights__styled-keypoints {
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+} */
+
+/* Animation Keyframes */
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+#clipinsights__summaryHeader,
+#clipinsights__keyPointsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#clipinsights__closeKeyPoints,
+#clipinsights__closeSummary,
+#clipinsights__closeChat {
+  background: none;
+  border: none;
+  color: #4255FF;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* #summaryAndBulletContainer {
+    margin-top: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  } */
+
+/* #clipinsights__summary {
+  /* margin-top: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); */
+
+
+.clipinsights__screenshot-note {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  /* Space between notes */
+  max-width: 100%;
+  /* Prevent the note from exceeding the container width */
+  word-wrap: break-word;
+  /* Break long words */
+  white-space: normal;
+}
+
+.clipinsights__screenshot {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.clipinsights__note {
+  font-size: 13px;
+  color: #555;
+  margin: 0;
+}
+
+.clipinsights__timestamp {
+  font-size: 12px;
+  color: #999;
+}
+
+.clipinsights__img {
+  width: 16px;
+  height: 16px;
+}
+
+#clipinsights__loginContainer {
+  margin-top: 8px;
+  display: none;
+  text-align: center;
+}
+
+.clipinsights__loginInputs {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+}
+
+.clipinsights__loginInputs:focus {
+  border-color: #4255FF;
+}
+
+#clipinsights__emailInput {
+  margin-bottom: 12px;
+}
+
+/* .clipinsights__back-btn {
+  margin-top: 12px;
+  font-size: 12px;
+  background-color: #4255FF;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.clipinsights__back-btn:hover {
+  background-color: #db6135;
+} */
+
+
+#clipinsights__loginBtnContainer {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+  gap: 5px;
+}
+
+#clipinsights__loginContainer h4{
+  margin-bottom: 12px;
+}
+
+#clipinsights__submitBackBtns{
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+#clipinsights__backBtn, #clipinsights__submitLogin {
+  width: 56px;
+  justify-content: center;
+}
+
+#clipinsights__registrationLink{
+  margin-top: 8px; 
+  font-size: 13px;
+}
+
+#clipinsights__registrationLink a{
+  margin-left: 4px; 
+  color: #4255FF; 
+  text-decoration: none;
+}
+
+/* #clipinsights__submitLogin {
+  background-color: #05eaa7;
+  margin-right: 12px;
+}
+
+#clipinsights__submitLogin:hover {
+  background-color: #03b17d;
+} */
+
+#clipinsights__chatHeader {
+  height: 20px;
+  background-color: #EDEFFF;
+  color: #26283b;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px 12px 0 0;
+}
+
+#clipinsights__chatbot-heading{
+  font-family: 'Roboto';
+  font-weight: 500;
+  color: #26283b;
+}
+
+/* Chat messages area */
+#clipinsights__chatMessages {
+  flex: 1; /* Allows chat messages to take the remaining space */
+  padding: 10px;
+  overflow-y: auto;
+  background-color: white;
+  border-top: 1px solid #ddd;
+  margin-bottom: 0;
+  height: 100%;
+  height: 348px;
+}
+
+/* Input area */
+#clipinsights__chatInputContainer {
+  display: flex;
+  padding: 10px;
+  background-color: #fff;
+  border-top: 1px solid #ddd;
+  position: relative;
+  /* Ensure it's at the bottom */
+}
+
+#clipinsights__chatInput {
+  flex-grow: 1;
+  padding: 8px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+}
+
+#clipinsights__sendChatBtn {
+  background-color: #4255FF;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  margin-left: 8px;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: background-color 0.3s ease;
+}
+
+#clipinsights__sendChatBtn:hover {
+  background-color: #2d3cc1;
+  filter: brightness(100%);
+}
+
+/* Chat message styling */
+.clipinsights__message {
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.clipinsights__message.clipinsights__user {
+  font-size: larger;
+  background-color: #EDEFFF;
+  color: #26283b;
+  align-self: flex-end;
+}
+
+.clipinsights__message.clipinsights__bot {
+  font-size: larger;
+  background-color: #f4f7fc;
+  align-self: flex-start;
+}
+
+/* Chat container styles */
+#clipinsights__chatContainer {
+  width: auto; /* Set a fixed width for the chat container */
+  background-color: white; /* Background color for the chat container */
+  border-radius: 12px; /* Rounded corners */
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+   /* Allow the container to take full height of its parent */
+}
+
+/* Add to existing button styles */
+#clipinsights__copyTranscriptBtn {
+  padding: 10px 6px;
+  gap: 5px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  color: #26283B;
+  height: 36px;
+  background-color: white;
+}
+
+#clipinsights__copyTranscriptBtn:hover {
+  color: #4255FF;
+  filter: brightness(100%);
+  border-color: #6c757d;
+  background-color: #EDEFFF;
+  transition: background-color 0.1s ease;
+}
+
+#clipinsights__copyTranscriptBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+#clipinsights__saveBtn.loading {
+  background-color: #ccc;
+  cursor: not-allowed;
+  color: #666;
+}
+#clipinsights__saveBtn.loading:before {
+  content: "Saving...";
+}
+#clipinsights__uploadBtn.loading {
+  background-color: #ccc;
+  cursor: not-allowed;
+  color: #666;
+}
+#clipinsights__uploadBtn.loading:before {
+  content: "Uploading...";
+}
+.clipinsights__delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.clipinsights__delete-btn:hover {
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+}
+
+.clipinsights__screenshot-note {
+  position: relative;
+}
+
+.clipinsights__note {
+  position: relative;
+  padding-right: 25px; /* Make room for delete button */
+  /* ... existing styles ... */
+}
+
+.clipinsights__screenshot-note {
+  position: relative;
+  /* ... existing styles ... */
+}
+
+.clipinsights__delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: all 0.2s ease;
+}
+
+.clipinsights__delete-btn:hover {
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+}
+
+/* Specific styling for note delete button */
+.clipinsights_note .clipinsights_delete-btn {
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(240, 240, 240, 0.8);
+}
+
+.clipinsights_note .clipinsights_delete-btn:hover {
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+}
+
+.clipinsights__update-btn {
+  position: absolute;
+  top: 5px;
+  right: 35px; 
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: all 0.2s ease;
+}
+
+.clipinsights__update-btn:hover {
+  background-color: rgba(0, 123, 255, 0.8); 
+  color: white;
+}
+
+.clipinsights__update-box {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  margin-top: 30px;  
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  resize: vertical;
+}
+
+.clipinsights__note-edit {
+  font-family: Arial, sans-serif;
+  color: #333;
+  flex-grow: 1;
+  padding: 12px;
+  border: 2px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  resize: none;
+  max-height: 20em;
+  line-height: 1.5em;
+  background-color: #f9f9f9;
+  box-sizing: border-box;
+  overflow-y: auto;
+  width: 93%;
+
+  -webkit-appearance: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.clipinsights__note-edit::-webkit-scrollbar {
+  display: none;
+}
+
+.clipinsights__note-edit {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#clipinsights__screenshotNoteContainer {
+  position: relative;
+}
+
+.clipinsights__userlimit {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  padding: 8px 12px 10px 12px;
+  border-radius: 0;
+  font-weight: normal;
+  font-size: 14px;
+  color: white;
+  text-align: center;
+  box-sizing: border-box;
+  z-index: 1000;
+  border-radius: 8px;
+  margin-bottom: 5px;
+}
+
+.clipinsights__limitGreen {
+  background-color: #4eae64;
+}
+
+.clipinsights__limitRed {
+  background-color: #e25e6b; 
+}
