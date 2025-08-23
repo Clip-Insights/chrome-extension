@@ -21,7 +21,7 @@
 <body id="clipinsights__body">
 
   <div id="clipinsights__top-container">
-    <a href="https://app.clipinsights.com" target="_blank" id="clipinsights__logo">
+    <!-- <a href="https://app.clipinsights.com" target="_blank" id="clipinsights__logo"> -->
     <div id="clipinsights__mainHeading">
         <?xml version="1.0" encoding="UTF-8"?>
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -40,7 +40,7 @@
     </div>
   </a>
 
-    <button id="clipinsights__loginBtn" class="clipinsights__button" title="Login">
+    <button id="clipinsights__loginBtn" class="clipinsights__button" title="Login" style="display: none;">
       <?xml version="1.0" encoding="UTF-8"?>
       <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24" width="16"
         height="16">
@@ -76,7 +76,33 @@
         Snapshot
         <!-- <img src="camera.png" alt="" /> -->
       </button>
-      <button class="clipinsights__button" id="clipinsights__summaryBtn" title="Summary">
+      <button class="clipinsights__button" id="clipinsights__saveBtn" title="Download">
+        <svg width="20" height="20" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.4"
+            d="M14.1667 6.79301H12.2401C10.6601 6.79301 9.37341 5.50634 9.37341 3.92634V1.99967C9.37341 1.63301 9.07341 1.33301 8.70675 1.33301H5.88008C3.82675 1.33301 2.16675 2.66634 2.16675 5.04634V10.953C2.16675 13.333 3.82675 14.6663 5.88008 14.6663H11.1201C13.1734 14.6663 14.8334 13.333 14.8334 10.953V7.45967C14.8334 7.09301 14.5334 6.79301 14.1667 6.79301Z"
+            fill="#3D52A1" />
+          <path
+            d="M11.0333 1.47365C10.76 1.20032 10.2866 1.38699 10.2866 1.76699V4.09365C10.2866 5.06699 11.1133 5.87365 12.12 5.87365C12.7533 5.88032 13.6333 5.88032 14.3866 5.88032C14.7666 5.88032 14.9666 5.43365 14.7 5.16699C13.74 4.20032 12.02 2.46032 11.0333 1.47365Z"
+            fill="#3D52A1" />
+          <path
+            d="M8.68655 9.81333C8.49321 9.62 8.17321 9.62 7.97988 9.81333L7.49988 10.2933V7.5C7.49988 7.22667 7.27321 7 6.99988 7C6.72655 7 6.49988 7.22667 6.49988 7.5V10.2933L6.01988 9.81333C5.82655 9.62 5.50655 9.62 5.31321 9.81333C5.11988 10.0067 5.11988 10.3267 5.31321 10.52L6.64655 11.8533C6.65321 11.86 6.65988 11.86 6.65988 11.8667C6.69988 11.9067 6.75321 11.94 6.80655 11.9667C6.87321 11.9867 6.93321 12 6.99988 12C7.06655 12 7.12655 11.9867 7.18655 11.96C7.24655 11.9333 7.29988 11.9 7.35321 11.8533L8.68655 10.52C8.87988 10.3267 8.87988 10.0067 8.68655 9.81333Z"
+            fill="#3D52A1" />
+        </svg>
+        Download
+      </button>
+      <button class="clipinsights__button" id="clipinsights__clearBtn" title="Clear">
+        <svg width="20" height="20" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M6.5733 3.38628C7.1533 3.21294 7.7933 3.09961 8.49997 3.09961C11.6933 3.09961 14.28 5.68628 14.28 8.87961C14.28 12.0729 11.6933 14.6596 8.49997 14.6596C5.30664 14.6596 2.71997 12.0729 2.71997 8.87961C2.71997 7.69294 3.07997 6.58628 3.6933 5.66628"
+            stroke="#3D52A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M5.74658 3.54634L7.67325 1.33301" stroke="#3D52A1" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path d="M5.74658 3.54688L7.99325 5.18688" stroke="#3D52A1" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        Clear
+      </button>
+      <button class="clipinsights__button" id="clipinsights__summaryBtn" title="Summary" style="display: none;">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path opacity="0.4"
             d="M13.6667 6.79301H11.7401C10.1601 6.79301 8.87341 5.50634 8.87341 3.92634V1.99967C8.87341 1.63301 8.57341 1.33301 8.20675 1.33301H5.38008C3.32675 1.33301 1.66675 2.66634 1.66675 5.04634V10.953C1.66675 13.333 3.32675 14.6663 5.38008 14.6663H10.6201C12.6734 14.6663 14.3334 13.333 14.3334 10.953V7.45967C14.3334 7.09301 14.0334 6.79301 13.6667 6.79301Z"
@@ -93,7 +119,7 @@
         </svg>
         <span>Summary</span>
       </button>
-      <button class="clipinsights__button" id="clipinsights__keypointsBtn" title="Key Points">
+      <button class="clipinsights__button" id="clipinsights__keypointsBtn" title="Key Points" style="display: none;">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
             d="M13.3333 12.8404H7.28666C6.98666 12.8404 6.73999 12.5937 6.73999 12.2937C6.73999 11.9937 6.98666 11.7471 7.28666 11.7471H13.3333C13.6333 11.7471 13.88 11.9937 13.88 12.2937C13.88 12.6004 13.6333 12.8404 13.3333 12.8404Z"
@@ -116,7 +142,7 @@
         </svg>
         <span>Key Points</span>
       </button>
-      <button id="clipinsights__chatBtn" class="clipinsights__button" title="Chat">
+      <button id="clipinsights__chatBtn" class="clipinsights__button" title="Chat" style="display: none;">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="8" cy="8" r="7" fill="#3D52A1" />
           <path fill-rule="evenodd" clip-rule="evenodd"
@@ -151,21 +177,8 @@
 
     <!-- This is now used for bottom side buttons not for login -->
     <div id="clipinsights__loginBtnContainer">
-      <button class="clipinsights__button" id="clipinsights__saveBtn" title="Download">
-        <svg width="20" height="20" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path opacity="0.4"
-            d="M14.1667 6.79301H12.2401C10.6601 6.79301 9.37341 5.50634 9.37341 3.92634V1.99967C9.37341 1.63301 9.07341 1.33301 8.70675 1.33301H5.88008C3.82675 1.33301 2.16675 2.66634 2.16675 5.04634V10.953C2.16675 13.333 3.82675 14.6663 5.88008 14.6663H11.1201C13.1734 14.6663 14.8334 13.333 14.8334 10.953V7.45967C14.8334 7.09301 14.5334 6.79301 14.1667 6.79301Z"
-            fill="#3D52A1" />
-          <path
-            d="M11.0333 1.47365C10.76 1.20032 10.2866 1.38699 10.2866 1.76699V4.09365C10.2866 5.06699 11.1133 5.87365 12.12 5.87365C12.7533 5.88032 13.6333 5.88032 14.3866 5.88032C14.7666 5.88032 14.9666 5.43365 14.7 5.16699C13.74 4.20032 12.02 2.46032 11.0333 1.47365Z"
-            fill="#3D52A1" />
-          <path
-            d="M8.68655 9.81333C8.49321 9.62 8.17321 9.62 7.97988 9.81333L7.49988 10.2933V7.5C7.49988 7.22667 7.27321 7 6.99988 7C6.72655 7 6.49988 7.22667 6.49988 7.5V10.2933L6.01988 9.81333C5.82655 9.62 5.50655 9.62 5.31321 9.81333C5.11988 10.0067 5.11988 10.3267 5.31321 10.52L6.64655 11.8533C6.65321 11.86 6.65988 11.86 6.65988 11.8667C6.69988 11.9067 6.75321 11.94 6.80655 11.9667C6.87321 11.9867 6.93321 12 6.99988 12C7.06655 12 7.12655 11.9867 7.18655 11.96C7.24655 11.9333 7.29988 11.9 7.35321 11.8533L8.68655 10.52C8.87988 10.3267 8.87988 10.0067 8.68655 9.81333Z"
-            fill="#3D52A1" />
-        </svg>
-        Download
-      </button>
-      <button class="clipinsights__button" id="clipinsights__uploadBtn" title="Upload to Clip Insights">
+      
+      <button class="clipinsights__button" id="clipinsights__uploadBtn" title="Upload to Clip Insights" style="display: none;">
         <svg width="20" height="20" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path opacity="0.4"
             d="M14.1667 6.79301H12.2401C10.6601 6.79301 9.37341 5.50634 9.37341 3.92634V1.99967C9.37341 1.63301 9.07341 1.33301 8.70675 1.33301H5.88008C3.82675 1.33301 2.16675 2.66634 2.16675 5.04634V10.953C2.16675 13.333 3.82675 14.6663 5.88008 14.6663H11.1201C13.1734 14.6663 14.8334 13.333 14.8334 10.953V7.45967C14.8334 7.09301 14.5334 6.79301 14.1667 6.79301Z"
@@ -180,7 +193,7 @@
         Upload
       </button>
 
-      <button class="clipinsights__button" id="clipinsights__copyTranscriptBtn" title="Copy Transcript">
+      <button class="clipinsights__button" id="clipinsights__copyTranscriptBtn" title="Copy Transcript" style="display: none;">
         <svg id="Layer_1" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"
           data-name="Layer 1">
           <path
@@ -193,18 +206,7 @@
         </span>
       </button>
 
-      <button class="clipinsights__button" id="clipinsights__clearBtn" title="Clear">
-        <svg width="20" height="20" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M6.5733 3.38628C7.1533 3.21294 7.7933 3.09961 8.49997 3.09961C11.6933 3.09961 14.28 5.68628 14.28 8.87961C14.28 12.0729 11.6933 14.6596 8.49997 14.6596C5.30664 14.6596 2.71997 12.0729 2.71997 8.87961C2.71997 7.69294 3.07997 6.58628 3.6933 5.66628"
-            stroke="#3D52A1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M5.74658 3.54634L7.67325 1.33301" stroke="#3D52A1" stroke-width="1.5" stroke-linecap="round"
-            stroke-linejoin="round" />
-          <path d="M5.74658 3.54688L7.99325 5.18688" stroke="#3D52A1" stroke-width="1.5" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-        Clear
-      </button>
+      
     </div>
   </div>
 

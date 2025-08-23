@@ -876,8 +876,7 @@ async function generatePDF() {
   const title = "Clip Insights";
   const textWidth = doc.getTextWidth(title);
   const centerX = (doc.internal.pageSize.width - textWidth) / 2; 
-  doc.textWithLink(title, centerX, y, { url: "https://clipinsights.com/" });
-  // doc.text(title, centerX, y);
+  doc.text(title, centerX, y);
   y += 2; 
   doc.line(centerX, y, centerX + textWidth, y);
   y += 13;
