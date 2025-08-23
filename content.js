@@ -361,10 +361,10 @@ async function addNote() {
     alert("Please enter a note.");
     return;
   }
-  if (note.length >= 7000) {
-    alert("Note is too long. Please reduce its length.");
-    return;
-  }
+  // if (note.length >= 7000) {
+  //   alert("Note is too long. Please reduce its length.");
+  //   return;
+  // }
   // Send message to background.js
   chrome.runtime.sendMessage(
     { action: "addNote", note: note },
@@ -868,7 +868,7 @@ async function generatePDF() {
 
   // Add "Clip Insights" title with a line
   doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("courier", "bold");
   // doc.text("Clip Insights", 10, y);
   // y += 5;
   // doc.line(10, y, 200, y);
@@ -992,14 +992,14 @@ async function generatePDF() {
 
   y += 10;
   // Add "Screenshots & Notes" heading with a proper line underneath
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("Screenshots & Notes", 10, y);
-  doc.setFontSize(12);
+  // doc.setFontSize(16);
+  // doc.setFont("helvetica", "bold");
+  // doc.text("Screenshots & Notes", 10, y);
+  // doc.setFontSize(12);
   // Draw a horizontal line below the heading
-  y += 3;
-  doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-  y += 10; // Add spacing after the line
+  // y += 3;
+  // doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
+  // y += 10; // Add spacing after the line
 
   // Reset font to normal for the rest of the content
   doc.setFont("helvetica", "bold");
