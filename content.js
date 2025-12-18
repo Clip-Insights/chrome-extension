@@ -868,7 +868,7 @@ async function generatePDF() {
 
   // Add "Clip Insights" title with a line
   doc.setFontSize(16);
-  doc.setFont("courier", "bold");
+  doc.setFont("helvetica", "bold");
   // doc.text("Clip Insights", 10, y);
   // y += 5;
   // doc.line(10, y, 200, y);
@@ -909,27 +909,27 @@ async function generatePDF() {
     }
 
     // Add logo
-    //    const logoUrl = chrome.runtime.getURL('logo1.jpg'); // Adjust path to your logo
-    //    await new Promise((resolve) => {
-    //        const img = new Image();
-    //        img.crossOrigin = 'Anonymous';
-    ////       img.onload = function() {
+       const logoUrl = chrome.runtime.getURL('logo1.jpg'); // Adjust path to your logo
+       await new Promise((resolve) => {
+           const img = new Image();
+           img.crossOrigin = 'Anonymous';
+          img.onload = function() {
     // Calculate height while maintaining aspect ratio
-    //            const imgWidth = 10; // Width of the logo
-    //            const imgHeight = (img.height * imgWidth) / img.width;
+               const imgWidth = 10; // Width of the logo
+               const imgHeight = (img.height * imgWidth) / img.width;
 
     // Add logo
-    //            doc.addImage(this, 'PNG', 10, y - 15, imgWidth, imgHeight);
-    //            resolve();
-    //        };
-    //        img.src = logoUrl;
-    //    });
+               doc.addImage(this, 'PNG', 10, y - 15, imgWidth, imgHeight);
+               resolve();
+           };
+           img.src = logoUrl;
+       });
 
     // Add website name and link
-    // doc.setFontSize(14);
-    // doc.setTextColor(0, 0, 255); // Blue color for the link
-    // doc.textWithLink('ClipInsights', 10, y, { url: 'https://app.clipinsights.com' }); // Replace with your actual website URL
-    // doc.setTextColor(0, 0, 0); // Reset to black color
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 255); // Blue color for the link
+    doc.textWithLink('ClipInsights', 10, y, { url: 'https://app.clipinsights.com' }); // Replace with your actual website URL
+    doc.setTextColor(0, 0, 0); // Reset to black color
 
     // Add the "Key Points" heading
     doc.setFontSize(16); // Larger font for the heading
@@ -992,14 +992,14 @@ async function generatePDF() {
 
   y += 10;
   // Add "Screenshots & Notes" heading with a proper line underneath
-  // doc.setFontSize(16);
-  // doc.setFont("helvetica", "bold");
-  // doc.text("Screenshots & Notes", 10, y);
-  // doc.setFontSize(12);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Screenshots & Notes", 10, y);
+  doc.setFontSize(12);
   // Draw a horizontal line below the heading
-  // y += 3;
-  // doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-  // y += 10; // Add spacing after the line
+  y += 3;
+  doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
+  y += 10; // Add spacing after the line
 
   // Reset font to normal for the rest of the content
   doc.setFont("helvetica", "bold");
