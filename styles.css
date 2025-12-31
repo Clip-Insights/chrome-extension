@@ -660,16 +660,128 @@
   color: #26283b;
 }
 
+/* Chat Status Bar - Minimal Info Banner */
+#clipinsights__chatStatusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8f9fb;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+#clipinsights__contextInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+}
+
+#clipinsights__contextInfo svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+#clipinsights__contextTime {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+#clipinsights__limitBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background-color: #f0fdf4;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #16a34a;
+  transition: all 0.2s ease;
+}
+
+#clipinsights__limitBadge.warning {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+#clipinsights__limitBadge.depleted {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+#clipinsights__limitBadge svg {
+  flex-shrink: 0;
+}
+
+/* Limit Badge Tooltip */
+#clipinsights__limitBadge {
+  position: relative;
+  cursor: default;
+}
+
+#clipinsights__limitTooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background-color: #1f2937;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  padding: 5px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#clipinsights__limitTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+#clipinsights__limitBadge:hover #clipinsights__limitTooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Context Loading Animation */
+#clipinsights__contextIcon.loading {
+  animation: clipinsights-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes clipinsights-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+#clipinsights__contextTime.loading {
+  color: #9ca3af;
+}
+
+#clipinsights__contextTime.error {
+  color: #d97706;
+}
+
 /* Chat messages area */
 #clipinsights__chatMessages {
   flex: 1; /* Allows chat messages to take the remaining space */
   padding: 10px;
   overflow-y: auto;
   background-color: white;
-  border-top: 1px solid #ddd;
+  border-top: none;
   margin-bottom: 0;
   height: 100%;
-  height: 348px;
+  height: 316px; /* Reduced to account for status bar (348 - 32) */
 }
 
 /* Input area */
@@ -781,29 +893,45 @@
 #clipinsights__uploadBtn.loading:before {
   content: "Uploading...";
 }
-.clipinsights__delete-btn {
+/* Note action buttons container */
+.clipinsights__note-actions {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgba(255, 255, 255, 0.8);
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+.clipinsights__screenshot-note:hover .clipinsights__note-actions {
+  opacity: 1;
+}
+
+/* Minimal delete button */
+.clipinsights__delete-btn {
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
   text-align: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
+  font-weight: 400;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  color: #666;
+  transition: all 0.15s ease;
 }
 
 .clipinsights__delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
+  background-color: #fee2e2;
+  color: #dc2626;
 }
 
 .clipinsights__screenshot-note {
@@ -812,77 +940,32 @@
 
 .clipinsights__note {
   position: relative;
-  padding-right: 25px; /* Make room for delete button */
-  /* ... existing styles ... */
+  padding-right: 40px;
 }
 
-.clipinsights__screenshot-note {
-  position: relative;
-  /* ... existing styles ... */
-}
-
-.clipinsights__delete-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
-  text-align: center;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  transition: all 0.2s ease;
-}
-
-.clipinsights__delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
-}
-
-/* Specific styling for note delete button */
-.clipinsights_note .clipinsights_delete-btn {
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(240, 240, 240, 0.8);
-}
-
-.clipinsights_note .clipinsights_delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
-}
-
+/* Minimal update/edit button */
 .clipinsights__update-btn {
-  position: absolute;
-  top: 5px;
-  right: 35px; 
-  background-color: rgba(255, 255, 255, 0.8);
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
   text-align: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 11px;
+  font-weight: 400;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
-  transition: all 0.2s ease;
+  color: #666;
+  transition: all 0.15s ease;
 }
 
 .clipinsights__update-btn:hover {
-  background-color: rgba(0, 123, 255, 0.8); 
-  color: white;
+  background-color: #dbeafe;
+  color: #2563eb;
 }
 
 .clipinsights__update-box {
@@ -901,18 +984,18 @@
   font-family: Arial, sans-serif;
   color: #333;
   flex-grow: 1;
-  padding: 12px;
-  border: 2px solid #dcdcdc;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   resize: none;
   max-height: 20em;
-  line-height: 1.5em;
-  background-color: #f9f9f9;
+  line-height: 1.4em;
+  background-color: #fafafa;
   box-sizing: border-box;
   overflow-y: auto;
-  width: 93%;
+  width: 100%;
 
   -webkit-appearance: none;
   scrollbar-width: none;

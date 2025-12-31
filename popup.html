@@ -245,6 +245,21 @@
       <h4 class="clipinsights__h4">Clip Bot</h4>
       <button class="clipinsights__button" id="clipinsights__closeChat">✖</button>
     </div>
+    <div id="clipinsights__chatStatusBar">
+      <div id="clipinsights__contextInfo">
+        <svg id="clipinsights__contextIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span id="clipinsights__contextTime">Analyzing video...</span>
+      </div>
+      <div id="clipinsights__limitBadge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        <span id="clipinsights__limitCount">10</span>
+        <span id="clipinsights__limitTooltip">Daily chats remaining</span>
+      </div>
+    </div>
     <div id="clipinsights__chatMessages"></div>
     <div id="clipinsights__chatInputContainer">
       <input type="text" id="clipinsights__chatInput" placeholder="Type a message..." />

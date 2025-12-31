@@ -87,7 +87,7 @@ function injectClipInsightsNotepad() {
           color: #333;
           border-radius: 16px;
           margin-bottom: 20px;
-          height: 512px; /* Set fixed height */
+          height: 514px; /* Set fixed height */
           overflow-y: auto;
         }
         /* Additional styles... */
@@ -324,10 +324,71 @@ document.addEventListener("keydown", (event) => {
 
       ClipInsightsNotepadDiv.querySelector(
         "#clipinsights__chatBtn"
-      )?.addEventListener("click", () => {
+      )?.addEventListener("click", async () => {
         // console.log("Chat button clicked!", chatContainer);
         mainContent.style.display = "none";
         chatContainer.style.display = "block";
+        
+        // Initialize limit badge with current remaining count
+        const CHAT_LIMIT_KEY = "yt-chat-limit";
+        let chatLimitData = localStorage.getItem(CHAT_LIMIT_KEY);
+        if (chatLimitData) {
+          chatLimitData = JSON.parse(chatLimitData);
+          if (Date.now() - chatLimitData.timestamp > 24 * 60 * 60 * 1000) {
+            chatLimitData = { count: 0, timestamp: Date.now() };
+          }
+        } else {
+          chatLimitData = { count: 0, timestamp: Date.now() };
+        }
+        const remaining = 10 - chatLimitData.count;
+        updateLimitBadge(remaining);
+        
+        // Proactively fetch transcript context
+        const contextTimeElement = document.getElementById("clipinsights__contextTime");
+        const contextIcon = document.getElementById("clipinsights__contextIcon");
+        
+        // Set loading state
+        if (contextTimeElement && contextIcon) {
+          contextTimeElement.textContent = "Analyzing video...";
+          contextTimeElement.classList.add("loading");
+          contextIcon.classList.add("loading");
+          
+          try {
+            const youtubeUrl = window.location.href;
+            if (youtubeUrl && youtubeUrl.includes("youtube.com/watch")) {
+              const transcription = await fetchTranscript(youtubeUrl);
+              
+              // Remove loading state
+              contextTimeElement.classList.remove("loading");
+              contextIcon.classList.remove("loading");
+              contextTimeElement.classList.remove("error");
+              
+              // Update with actual context info
+              if (transcription.lastTagTime !== -1) {
+                const sliceTimeInMinutes = (transcription.lastTagTime / 60).toFixed(2);
+                contextTimeElement.textContent = `Context up to ${sliceTimeInMinutes} min`;
+              } else if (transcription.transcript === "Transcript not available" || 
+                         transcription.transcript === "No captions available" ||
+                         transcription.transcript === "Failed to fetch transcript") {
+                contextTimeElement.textContent = "No transcript available";
+                contextTimeElement.classList.add("error");
+              } else {
+                contextTimeElement.textContent = "Full video context";
+              }
+            } else {
+              contextTimeElement.textContent = "Not a YouTube video";
+              contextTimeElement.classList.remove("loading");
+              contextIcon.classList.remove("loading");
+              contextTimeElement.classList.add("error");
+            }
+          } catch (error) {
+            console.error("Error fetching context:", error);
+            contextTimeElement.textContent = "Context unavailable";
+            contextTimeElement.classList.remove("loading");
+            contextIcon.classList.remove("loading");
+            contextTimeElement.classList.add("error");
+          }
+        }
       });
       ClipInsightsNotepadDiv.querySelector(
         "#clipinsights__closeChat"
@@ -409,14 +470,14 @@ function addNoteToPopup(note, time) {
   // Create delete button for note
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("clipinsights__delete-btn");
-  deleteBtn.innerHTML = "×";
-  deleteBtn.title = "Delete note";
+  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  deleteBtn.title = "Delete";
 
   // Create update button for note
   const updateBtn = document.createElement("button");
   updateBtn.classList.add("clipinsights__update-btn");
-  updateBtn.innerHTML = "✎";
-  updateBtn.title = "Edit note";
+  updateBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
+  updateBtn.title = "Edit";
 
   // Add click handler for delete button
   deleteBtn.addEventListener("click", async () => {
@@ -617,11 +678,15 @@ function addScreenshotToPopup(screenshotUrl, time) {
   const div = document.createElement("div");
   div.classList.add("clipinsights__screenshot-note");
 
+  // Create action buttons container for consistent positioning
+  const actionBtns = document.createElement("div");
+  actionBtns.classList.add("clipinsights__note-actions");
+
   // Create delete button
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("clipinsights__delete-btn");
-  deleteBtn.innerHTML = "×"; // Using × symbol for the cross
-  deleteBtn.title = "Delete screenshot";
+  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  deleteBtn.title = "Delete";
 
   // Add click handler for delete button
   deleteBtn.addEventListener("click", async () => {
@@ -650,6 +715,9 @@ function addScreenshotToPopup(screenshotUrl, time) {
     }
   });
 
+  // Add delete button to action container
+  actionBtns.appendChild(deleteBtn);
+
   const img = document.createElement("img");
   img.src = screenshotUrl;
   img.classList.add("clipinsights__screenshot");
@@ -662,8 +730,8 @@ function addScreenshotToPopup(screenshotUrl, time) {
     });
   };
 
-  // Add delete button and image to container
-  div.appendChild(deleteBtn);
+  // Add action buttons and image to container
+  div.appendChild(actionBtns);
   div.appendChild(img);
 
   const timestamp = document.createElement("p");
@@ -2131,8 +2199,25 @@ async function logout() {
 }
 
 // Chat functions
-let sliceMessageDisplayed = false; // Track if slice time message has been shown
 let lastProcessedUrl = ""; // Store the last processed URL
+
+// Helper function to update the limit badge in the chat status bar
+function updateLimitBadge(remaining) {
+  const limitBadge = document.getElementById("clipinsights__limitBadge");
+  const limitCount = document.getElementById("clipinsights__limitCount");
+  
+  if (limitBadge && limitCount) {
+    limitCount.textContent = remaining;
+    
+    // Update badge color based on remaining count
+    limitBadge.classList.remove("warning", "depleted");
+    if (remaining <= 0) {
+      limitBadge.classList.add("depleted");
+    } else if (remaining <= 3) {
+      limitBadge.classList.add("warning");
+    }
+  }
+}
 
 // Add this function to manage chat history
 function getChatHistory() {
@@ -2197,31 +2282,25 @@ async function sendMessage() {
 
   if (youtubeUrl && youtubeUrl.includes("youtube.com/watch")) {
     try {
-      // Reset sliceMessageDisplayed if URL changes
-      if (youtubeUrl !== lastProcessedUrl) {
-        sliceMessageDisplayed = false;
-        lastProcessedUrl = youtubeUrl;
-      }
+      // Track URL changes for context updates
+      lastProcessedUrl = youtubeUrl;
 
       const transcription = await fetchTranscript(youtubeUrl);
 
-      // Handle slice time message display
-      if (!sliceMessageDisplayed && transcription.lastTagTime !== -1) {
-        const sliceTimeInMinutes = (transcription.lastTagTime / 60).toFixed(2);
-        const sliceMessage = `Video chatting is available for up to ${sliceTimeInMinutes} minutes.`;
-        const sliceMessageElement = document.createElement("div");
-        sliceMessageElement.classList.add(
-          "clipinsights__message",
-          "clipinsights__bot"
-        );
-        sliceMessageElement.textContent = sliceMessage;
-        clipinsights__chatMessages.insertBefore(
-          sliceMessageElement,
-          clipinsights__chatMessages.firstChild
-        );
-        sliceMessageDisplayed = true;
-        clipinsights__chatMessages.scrollTop = clipinsights__chatMessages.scrollHeight;
+      // Update status bar with context time info
+      const contextTimeElement = document.getElementById("clipinsights__contextTime");
+      if (contextTimeElement) {
+        if (transcription.lastTagTime !== -1) {
+          const sliceTimeInMinutes = (transcription.lastTagTime / 60).toFixed(2);
+          contextTimeElement.textContent = `Context up to ${sliceTimeInMinutes} min`;
+        } else {
+          contextTimeElement.textContent = "Full video context";
+        }
       }
+
+      // Update limit badge
+      const remaining = 10 - chatLimitData.count;
+      updateLimitBadge(remaining);
 
       // Prepare data payload with chat history if enabled
       const data = {
@@ -2262,9 +2341,9 @@ async function sendMessage() {
         const { done, value } = await reader.read();
         if (done) {
           if (isSuccess) {
-            // Append remaining limit to the message
+            // Update limit badge (don't append to message)
             const remaining = 10 - chatLimitData.count;
-            botMessageElement.textContent += `\n\nDaily Limit Remaining: ${remaining} ⚡`;
+            updateLimitBadge(remaining);
             clipinsights__chatMessages.scrollTop = clipinsights__chatMessages.scrollHeight;
           }
           break;
