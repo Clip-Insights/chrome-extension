@@ -660,7 +660,8 @@
   color: #26283b;
 }
 
-/* Chat Status Bar - Minimal Info Banner */
+/* Shared Status Bar - Minimal Info Banner (Chat, Summary, Keypoints) */
+.clipinsights__statusBar,
 #clipinsights__chatStatusBar {
   display: flex;
   justify-content: space-between;
@@ -671,6 +672,7 @@
   font-size: 12px;
 }
 
+.clipinsights__contextInfo,
 #clipinsights__contextInfo {
   display: flex;
   align-items: center;
@@ -678,16 +680,19 @@
   color: #6b7280;
 }
 
+.clipinsights__contextInfo svg,
 #clipinsights__contextInfo svg {
   flex-shrink: 0;
   opacity: 0.7;
 }
 
+.clipinsights__contextText,
 #clipinsights__contextTime {
   font-size: 11px;
   color: #6b7280;
 }
 
+.clipinsights__limitBadge,
 #clipinsights__limitBadge {
   display: flex;
   align-items: center;
@@ -699,28 +704,29 @@
   font-weight: 500;
   color: #16a34a;
   transition: all 0.2s ease;
+  position: relative;
+  cursor: default;
 }
 
+.clipinsights__limitBadge.warning,
 #clipinsights__limitBadge.warning {
   background-color: #fffbeb;
   color: #d97706;
 }
 
+.clipinsights__limitBadge.depleted,
 #clipinsights__limitBadge.depleted {
   background-color: #fef2f2;
   color: #dc2626;
 }
 
+.clipinsights__limitBadge svg,
 #clipinsights__limitBadge svg {
   flex-shrink: 0;
 }
 
-/* Limit Badge Tooltip */
-#clipinsights__limitBadge {
-  position: relative;
-  cursor: default;
-}
-
+/* Limit Badge Tooltip (shared) */
+.clipinsights__limitTooltip,
 #clipinsights__limitTooltip {
   position: absolute;
   bottom: calc(100% + 6px);
@@ -739,6 +745,7 @@
   z-index: 10;
 }
 
+.clipinsights__limitTooltip::after,
 #clipinsights__limitTooltip::after {
   content: '';
   position: absolute;
@@ -749,12 +756,14 @@
   border-color: #1f2937 transparent transparent transparent;
 }
 
+.clipinsights__limitBadge:hover .clipinsights__limitTooltip,
 #clipinsights__limitBadge:hover #clipinsights__limitTooltip {
   opacity: 1;
   visibility: visible;
 }
 
-/* Context Loading Animation */
+/* Context Loading Animation (shared) */
+.clipinsights__contextIcon.loading,
 #clipinsights__contextIcon.loading {
   animation: clipinsights-pulse 1.2s ease-in-out infinite;
 }
@@ -764,10 +773,12 @@
   50% { opacity: 1; }
 }
 
+.clipinsights__contextText.loading,
 #clipinsights__contextTime.loading {
   color: #9ca3af;
 }
 
+.clipinsights__contextText.error,
 #clipinsights__contextTime.error {
   color: #d97706;
 }

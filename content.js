@@ -1504,20 +1504,33 @@ async function getSummary() {
 
   // Calculate remaining calls (5 to 0)
   const remainingCalls = 5 - apiCallData.count;
+  
+  // Update status bar with remaining limit
+  updateSummaryStatusBar(remainingCalls, "Analyzing video...", true);
 
   if (
     savedSummary && savedSummary.length > 0 &&
     savedKeypoints && savedKeypoints.length > 0
   ) {
-    summaryResult.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatSummaryToHTML(savedSummary[0]?.text);
-    summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatKeypoints(savedKeypoints[0]?.text);
+    // Check if summary contains context time info
+    const summaryText = savedSummary[0]?.text || "";
+    const timeMatch = summaryText.match(/upto\s+([\d.]+)\s*minutes/i);
+    if (timeMatch) {
+      updateSummaryStatusBar(remainingCalls, `Context up to ${timeMatch[1]} min`, false);
+    } else {
+      updateSummaryStatusBar(remainingCalls, "Full video context", false);
+    }
+    
+    summaryResult.innerHTML = formatSummaryToHTML(savedSummary[0]?.text);
+    summaryKeypoints.innerHTML = formatKeypoints(savedKeypoints[0]?.text);
     document.getElementById("clipinsights__summary").style.display = "block";
     document.getElementById("clipinsights__keypoints").style.display = "block";
     return;
   }
   
   if (apiCallData.count >= 5) {
-    summaryResult.innerText = `Daily Limit Remaining: ${remainingCalls} ⚡\nYour summary limit has been reached.`;
+    updateSummaryStatusBar(remainingCalls, "Limit reached", false, true);
+    summaryResult.innerText = "Your summary limit has been reached. Please try again tomorrow.";
     summaryBtn.disabled = false;
     const summaryBtnSpan = summaryBtn.querySelector("span");
     summaryBtnSpan.textContent = "Summary";
@@ -1540,6 +1553,7 @@ async function getSummary() {
     !transcriptionData.transcript ||
     transcriptionData.transcript === "Transcript not available"
   ) {
+    updateSummaryStatusBar(5 - apiCallData.count, "No transcript available", false, true);
     summaryResult.innerText = "We're sorry, we were unable to summarize this video because the transcription is unavailable";
     summaryBtn.disabled = false;
     summaryBtnSpan.textContent = "Summary";
@@ -1569,29 +1583,38 @@ async function getSummary() {
           const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
           finalSummary += `...upto ${sliceTimeInMinutes} minutes`;
           finalKeypoints = parseList(finalKeypoints);
-          finalKeypoints.push(`Key points are up to ${sliceTimeInMinutes} minutes`);
         }
 
         notesDatabase.saveSummary(finalSummary, youtubeUrl);
         notesDatabase.saveKeypoints(finalKeypoints, youtubeUrl);
 
-        // Display updated remaining calls after increment
+        // Update status bar with context info and remaining limit
         const updatedRemainingCalls = 5 - apiCallData.count;
-        summaryResult.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatSummaryToHTML(finalSummary);
-        summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatKeypoints(finalKeypoints);
+        if (transcriptionData.lastTagTime !== -1) {
+          const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
+          updateSummaryStatusBar(updatedRemainingCalls, `Context up to ${sliceTimeInMinutes} min`, false);
+        } else {
+          updateSummaryStatusBar(updatedRemainingCalls, "Full video context", false);
+        }
+        
+        summaryResult.innerHTML = formatSummaryToHTML(finalSummary);
+        summaryKeypoints.innerHTML = formatKeypoints(finalKeypoints);
         document.getElementById("clipinsights__summary").style.display = "block";
         document.getElementById("clipinsights__keypoints").style.display = "block";
       } else if (data.success === false) {
+        updateSummaryStatusBar(5 - apiCallData.count, "Error", false, true);
         summaryResult.innerText = data.message;
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
+      updateSummaryStatusBar(5 - apiCallData.count, "Error", false, true);
       summaryResult.innerText = "An error occurred while fetching the summary.";
     } finally {
       summaryBtn.disabled = false;
       summaryBtnSpan.textContent = "Summary";
     }
   } else {
+    updateSummaryStatusBar(remainingCalls, "Not a YouTube video", false, true);
     summaryResult.innerText = "This might not be a YouTube video page. Try on a YouTube video page.";
     summaryBtn.disabled = false;
     summaryBtnSpan.textContent = "Summary";
@@ -1622,14 +1645,39 @@ async function getKeypoints() {
   }
   
   const remainingCalls = 5 - apiCallData.count;
+  
+  // Update status bar with remaining limit
+  updateKeypointsStatusBar(remainingCalls, "Analyzing video...", true);
 
   // Check if summary and keypoints exist in the database
   const savedSummary = await notesDatabase.getSummary(youtubeUrl);
   const savedKeypoints = await notesDatabase.getKeypoints(youtubeUrl);
 
   if (savedKeypoints && savedKeypoints.length > 0 && savedSummary && savedSummary.length > 0) {
-    summaryResult.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatSummaryToHTML(savedSummary[0]?.text);
-    summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatKeypoints(savedKeypoints[0]?.text);
+    // Check if keypoints contain context time info
+    const keypointsData = savedKeypoints[0]?.text;
+    let hasTimeContext = false;
+    let timeValue = null;
+    
+    if (Array.isArray(keypointsData)) {
+      const timeItem = keypointsData.find(item => item && item.includes && item.includes("up to"));
+      if (timeItem) {
+        const match = timeItem.match(/([\d.]+)\s*minutes/i);
+        if (match) {
+          hasTimeContext = true;
+          timeValue = match[1];
+        }
+      }
+    }
+    
+    if (hasTimeContext && timeValue) {
+      updateKeypointsStatusBar(remainingCalls, `Context up to ${timeValue} min`, false);
+    } else {
+      updateKeypointsStatusBar(remainingCalls, "Full video context", false);
+    }
+    
+    summaryResult.innerHTML = formatSummaryToHTML(savedSummary[0]?.text);
+    summaryKeypoints.innerHTML = formatKeypoints(savedKeypoints[0]?.text);
     document.getElementById("clipinsights__summary").style.display = "block";
     document.getElementById("clipinsights__keypoints").style.display = "block";
     return;
@@ -1651,6 +1699,7 @@ async function getKeypoints() {
     !transcriptionData.transcript ||
     transcriptionData.transcript === "Transcript not available"
   ) {
+    updateKeypointsStatusBar(remainingCalls, "No transcript available", false, true);
     summaryKeypoints.innerText = "We're sorry, we were unable to get key points for this video because the transcription is unavailable";
     keypointsBtn.disabled = false;
     keypointsBtnSpan.textContent = "Key points";
@@ -1661,7 +1710,8 @@ async function getKeypoints() {
   if (youtubeUrl.includes("youtube.com/watch")) {
     // Check API call limit
     if (apiCallData.count >= 5) {
-      summaryKeypoints.innerText = `Daily Limit Remaining: ${remainingCalls} ⚡\nYour key points limit has been reached.`;
+      updateKeypointsStatusBar(remainingCalls, "Limit reached", false, true);
+      summaryKeypoints.innerText = "Your key points limit has been reached. Please try again tomorrow.";
       keypointsBtn.disabled = false;
       keypointsBtnSpan.textContent = "Key points";
       return;
@@ -1698,23 +1748,32 @@ async function getKeypoints() {
           const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
           finalSummary += `...upto ${sliceTimeInMinutes} minutes`;
           finalKeypoints = parseList(finalKeypoints);
-          finalKeypoints.push(`Key points are up to ${sliceTimeInMinutes} minutes`);
         }
 
         // Save the generated summary and keypoints to the database
         notesDatabase.saveSummary(finalSummary, youtubeUrl);
         notesDatabase.saveKeypoints(finalKeypoints, youtubeUrl);
 
+        // Update status bar with context info and remaining limit
+        if (transcriptionData.lastTagTime !== -1) {
+          const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
+          updateKeypointsStatusBar(updatedRemainingCalls, `Context up to ${sliceTimeInMinutes} min`, false);
+        } else {
+          updateKeypointsStatusBar(updatedRemainingCalls, "Full video context", false);
+        }
+
         // Display the summary and keypoints
-        summaryResult.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatSummaryToHTML(finalSummary);
-        summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatKeypoints(finalKeypoints);
+        summaryResult.innerHTML = formatSummaryToHTML(finalSummary);
+        summaryKeypoints.innerHTML = formatKeypoints(finalKeypoints);
         document.getElementById("clipinsights__summary").style.display = "block";
         document.getElementById("clipinsights__keypoints").style.display = "block";
       } else if (data.success === false) {
+        updateKeypointsStatusBar(updatedRemainingCalls, "Error", false, true);
         summaryKeypoints.innerText = data.message;
       }
     } catch (error) {
       console.error("Error generating Key Points:", error);
+      updateKeypointsStatusBar(5 - apiCallData.count, "Error", false, true);
       summaryKeypoints.innerText = "An error occurred while generating key points.";
     } finally {
       // Restore button state after request completion
@@ -1722,6 +1781,7 @@ async function getKeypoints() {
       keypointsBtnSpan.textContent = "Key points";
     }
   } else {
+    updateKeypointsStatusBar(remainingCalls, "Not a YouTube video", false, true);
     summaryKeypoints.innerText = "This might not be a YouTube video page. Try on a YouTube video page.";
     // Restore button state if not a YouTube video
     keypointsBtn.disabled = false;
@@ -2216,6 +2276,62 @@ function updateLimitBadge(remaining) {
     } else if (remaining <= 3) {
       limitBadge.classList.add("warning");
     }
+  }
+}
+
+// Helper function to update Summary status bar
+function updateSummaryStatusBar(remaining, contextText = null, isLoading = false, isError = false) {
+  const limitBadge = document.getElementById("clipinsights__summaryLimitBadge");
+  const limitCount = document.getElementById("clipinsights__summaryLimitCount");
+  const contextTextEl = document.getElementById("clipinsights__summaryContextText");
+  const contextIcon = document.querySelector("#clipinsights__summaryStatusBar .clipinsights__contextIcon");
+  
+  if (limitBadge && limitCount) {
+    limitCount.textContent = remaining;
+    limitBadge.classList.remove("warning", "depleted");
+    if (remaining <= 0) {
+      limitBadge.classList.add("depleted");
+    } else if (remaining <= 2) {
+      limitBadge.classList.add("warning");
+    }
+  }
+  
+  if (contextTextEl) {
+    if (contextText) contextTextEl.textContent = contextText;
+    contextTextEl.classList.toggle("loading", isLoading);
+    contextTextEl.classList.toggle("error", isError);
+  }
+  
+  if (contextIcon) {
+    contextIcon.classList.toggle("loading", isLoading);
+  }
+}
+
+// Helper function to update Keypoints status bar
+function updateKeypointsStatusBar(remaining, contextText = null, isLoading = false, isError = false) {
+  const limitBadge = document.getElementById("clipinsights__keypointsLimitBadge");
+  const limitCount = document.getElementById("clipinsights__keypointsLimitCount");
+  const contextTextEl = document.getElementById("clipinsights__keypointsContextText");
+  const contextIcon = document.querySelector("#clipinsights__keypointsStatusBar .clipinsights__contextIcon");
+  
+  if (limitBadge && limitCount) {
+    limitCount.textContent = remaining;
+    limitBadge.classList.remove("warning", "depleted");
+    if (remaining <= 0) {
+      limitBadge.classList.add("depleted");
+    } else if (remaining <= 2) {
+      limitBadge.classList.add("warning");
+    }
+  }
+  
+  if (contextTextEl) {
+    if (contextText) contextTextEl.textContent = contextText;
+    contextTextEl.classList.toggle("loading", isLoading);
+    contextTextEl.classList.toggle("error", isError);
+  }
+  
+  if (contextIcon) {
+    contextIcon.classList.toggle("loading", isLoading);
   }
 }
 

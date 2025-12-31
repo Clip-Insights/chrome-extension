@@ -214,6 +214,21 @@
       <h2 id="clipinsights__summaryHeading">📄Summary</h2>
       <button class="clipinsights__button" id="clipinsights__closeSummary">✖</button>
     </div>
+    <div class="clipinsights__statusBar" id="clipinsights__summaryStatusBar">
+      <div class="clipinsights__contextInfo">
+        <svg class="clipinsights__contextIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span class="clipinsights__contextText" id="clipinsights__summaryContextText">Analyzing video...</span>
+      </div>
+      <div class="clipinsights__limitBadge" id="clipinsights__summaryLimitBadge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        <span class="clipinsights__limitCount" id="clipinsights__summaryLimitCount">5</span>
+        <span class="clipinsights__limitTooltip">Daily summaries remaining</span>
+      </div>
+    </div>
     <div id="clipinsights__summary" style="white-space: pre-wrap;"></div>
   </div>
 
@@ -223,7 +238,21 @@
       <h2 id="clipinsights__keypointsHeading">🔹Key Points</h2>
       <button class="clipinsights__button" id="clipinsights__closeKeyPoints">✖</button>
     </div>
-
+    <div class="clipinsights__statusBar" id="clipinsights__keypointsStatusBar">
+      <div class="clipinsights__contextInfo">
+        <svg class="clipinsights__contextIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span class="clipinsights__contextText" id="clipinsights__keypointsContextText">Analyzing video...</span>
+      </div>
+      <div class="clipinsights__limitBadge" id="clipinsights__keypointsLimitBadge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        <span class="clipinsights__limitCount" id="clipinsights__keypointsLimitCount">5</span>
+        <span class="clipinsights__limitTooltip">Daily key points remaining</span>
+      </div>
+    </div>
     <div id="clipinsights__keypoints" style="white-space: pre-wrap;"></div>
   </div>
 
