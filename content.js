@@ -87,7 +87,7 @@ function injectClipInsightsNotepad() {
           color: #333;
           border-radius: 16px;
           margin-bottom: 20px;
-          height: 514px; /* Set fixed height */
+          height: 490px; /* Set fixed height */
           overflow-y: auto;
         }
         /* Additional styles... */
@@ -470,14 +470,12 @@ function addNoteToPopup(note, time) {
   // Create delete button for note
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("clipinsights__delete-btn");
-  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-  deleteBtn.title = "Delete";
+  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span class="clipinsights__btnTooltip">Delete</span>`;
 
   // Create update button for note
   const updateBtn = document.createElement("button");
   updateBtn.classList.add("clipinsights__update-btn");
-  updateBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
-  updateBtn.title = "Edit";
+  updateBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg><span class="clipinsights__btnTooltip">Edit</span>`;
 
   // Add click handler for delete button
   deleteBtn.addEventListener("click", async () => {
@@ -685,8 +683,7 @@ function addScreenshotToPopup(screenshotUrl, time) {
   // Create delete button
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("clipinsights__delete-btn");
-  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-  deleteBtn.title = "Delete";
+  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span class="clipinsights__btnTooltip">Delete</span>`;
 
   // Add click handler for delete button
   deleteBtn.addEventListener("click", async () => {

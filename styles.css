@@ -102,6 +102,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 2;
 }
 
 #clipinsights__mainHeading {
@@ -140,8 +142,10 @@
 .clipinsights__button-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   gap: 5px;
+  position: relative;
+  z-index: 1;
 }
 /* 
 #clipinsights__summaryBtn,
@@ -320,7 +324,7 @@
 
 #clipinsights__screenshotNoteContainer {
   margin-top: 15px;
-  height: 268px;
+  height: 252px;
   overflow-y: auto;
   background-color: white;
   padding: 10px;
@@ -606,6 +610,18 @@
   gap: 5px;
 }
 
+/* Bottom buttons tooltips appear at the top */
+#clipinsights__loginBtnContainer .clipinsights__btnTooltip {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+#clipinsights__loginBtnContainer .clipinsights__btnTooltip::before {
+  bottom: auto;
+  top: 100%;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
 #clipinsights__loginContainer h4{
   margin-bottom: 12px;
 }
@@ -783,6 +799,46 @@
   color: #d97706;
 }
 
+/* Button Tooltip (shared) */
+.clipinsights__button {
+  position: relative;
+}
+
+.clipinsights__btnTooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1f2937;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  padding: 5px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.clipinsights__btnTooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: transparent transparent #1f2937 transparent;
+}
+
+.clipinsights__button:hover .clipinsights__btnTooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Chat messages area */
 #clipinsights__chatMessages {
   flex: 1; /* Allows chat messages to take the remaining space */
@@ -792,7 +848,7 @@
   border-top: none;
   margin-bottom: 0;
   height: 100%;
-  height: 316px; /* Reduced to account for status bar (348 - 32) */
+  height: 292px;
 }
 
 /* Input area */
@@ -853,11 +909,13 @@
 
 /* Chat container styles */
 #clipinsights__chatContainer {
-  width: auto; /* Set a fixed width for the chat container */
+  width: 100%; /* Constrain to parent width */
+  max-width: 100%; /* Prevent overflow */
   background-color: white; /* Background color for the chat container */
   border-radius: 12px; /* Rounded corners */
   display: flex;
   flex-direction: column; /* Stack children vertically */
+  box-sizing: border-box; /* Include padding in width calculation */
    /* Allow the container to take full height of its parent */
 }
 
@@ -938,11 +996,26 @@
   justify-content: center;
   color: #666;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .clipinsights__delete-btn:hover {
   background-color: #fee2e2;
   color: #dc2626;
+}
+
+/* Action button tooltips (delete/edit) */
+.clipinsights__delete-btn .clipinsights__btnTooltip,
+.clipinsights__update-btn .clipinsights__btnTooltip {
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.clipinsights__delete-btn:hover .clipinsights__btnTooltip,
+.clipinsights__update-btn:hover .clipinsights__btnTooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .clipinsights__screenshot-note {
@@ -972,6 +1045,7 @@
   justify-content: center;
   color: #666;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .clipinsights__update-btn:hover {
@@ -1037,7 +1111,7 @@
   color: white;
   text-align: center;
   box-sizing: border-box;
-  z-index: 1000;
+  z-index: 2;
   border-radius: 8px;
   margin-bottom: 5px;
 }
