@@ -87,7 +87,7 @@ function injectClipInsightsNotepad() {
           color: #333;
           border-radius: 16px;
           margin-bottom: 20px;
-          height: 490px; /* Set fixed height */
+          height: 494px; /* Set fixed height */
           overflow-y: auto;
         }
         /* Additional styles... */
@@ -178,7 +178,6 @@ const uploadButton = ClipInsightsNotepadDiv.querySelector("#clipinsights__upload
 uploadButton?.addEventListener("click", async () => {
   // Save the original content BEFORE disabling the button
   const originalContent = uploadButton.innerHTML;
-  console.log("originalContent", originalContent);
   // Now disable the button and update its content
   uploadButton.disabled = true;
   uploadButton.innerHTML = "Uploading...";
@@ -1206,7 +1205,7 @@ async function uploadPDF() {
   formData.append("file", pdfBlob, fileName);
 
   try {
-    const response = await fetch(`${API_URL}/api/userspace/upload-file/`, {
+    const response = await fetch(`${API_URL}/api/userspace/files/`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
       body: formData
