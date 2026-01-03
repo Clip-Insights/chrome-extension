@@ -946,17 +946,58 @@ async function generatePDF() {
     bottom: 25  // Extra space for footer
   };
 
+  // Helper function to convert SVG to high-quality PNG
+  const convertSvgToPng = (svgString, width, height) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const scale = 4; // 4x resolution for crisp rendering
+      
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      
+      const img = new Image();
+      img.onload = () => {
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      img.src = url;
+    });
+  };
+
+  // ClipInsights logo SVG
+  const logoSvgString = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="28" height="28" rx="12" fill="#1C1C1C" />
+  <g transform="rotate(-45 14 14) scale(0.75)">
+    <rect x="11" y="10" width="20" height="3" fill="#FFFFFF" rx="1" />
+    <rect x="4" y="17" width="20" height="3" fill="#FFFFFF" rx="1" />
+    <rect x="11" y="24" width="20" height="3" fill="#FFFFFF" rx="1" />
+  </g>
+</svg>`;
+
+  // Convert SVG to PNG at high resolution
+  const logoPng = await convertSvgToPng(logoSvgString, 28, 28);
+
   // Helper function to add page numbers and footer
   const addPageFooter = (pageNum) => {
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     
-    // Add generation date on left
+    // Add small logo on the left
+    const logoSize = 4;
+    doc.addImage(logoPng, 'PNG', margins.left, pageHeight - 12, logoSize, logoSize);
+    
+    // Add generation date next to logo
     doc.setFontSize(fonts.small);
     doc.setTextColor(...colors.mediumGray);
     doc.setFont("helvetica", "normal");
     const generatedText = `Generated on ${new Date().toLocaleDateString()}`;
-    doc.text(generatedText, margins.left, pageHeight - 10);
+    doc.text(generatedText, margins.left + logoSize + 3, pageHeight - 10);
     
     // Add page number on right
     const pageText = `Page ${pageNum}`;
@@ -992,20 +1033,29 @@ async function generatePDF() {
   const pageHeight = doc.internal.pageSize.height - margins.bottom;
   let currentPage = 1;
 
-  // Add "Clip Insights" title - centered and prominent
+  // Add logo and "Clip Insights" title - centered together
   doc.setFontSize(fonts.h1);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.primary);
   const title = "Clip Insights";
-  const textWidth = doc.getTextWidth(title);
-  const centerX = (pageWidth - textWidth) / 2; 
-  doc.textWithLink(title, centerX, y, { url: "https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj" });
+  const titleWidth = doc.getTextWidth(title);
+  const logoSize = 10;
+  const spacing = 4; // Space between logo and title
+  const totalWidth = logoSize + spacing + titleWidth;
+  const startX = (pageWidth - totalWidth) / 2;
+  
+  // Add logo
+  doc.addImage(logoPng, 'PNG', startX, y - 7, logoSize, logoSize);
+  
+  // Add title next to logo
+  const titleX = startX + logoSize + spacing;
+  doc.textWithLink(title, titleX, y, { url: "https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj" });
   y += 3;
   // https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj?utm_source=item-share-cb
-  // Underline with primary color
+  // Underline with primary color (only under text, not logo)
   doc.setDrawColor(...colors.primary);
   doc.setLineWidth(0.5);
-  doc.line(centerX, y, centerX + textWidth, y);
+  doc.line(titleX, y, titleX + titleWidth, y);
   doc.setDrawColor(...colors.border);
   doc.setLineWidth(0.1);
   y += 12;
