@@ -923,38 +923,106 @@ async function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
+  // PDF styling constants
+  const colors = {
+    primary: [37, 99, 235],      // Modern blue #2563EB
+    text: [33, 33, 33],           // Dark gray #212121
+    lightGray: [243, 244, 246],   // #F3F4F6
+    mediumGray: [156, 163, 175],  // #9CA3AF
+    border: [229, 231, 235]       // #E5E7EB
+  };
+  
+  const fonts = {
+    h1: 18,
+    h2: 14,
+    body: 11,
+    small: 9
+  };
+  
+  const margins = {
+    left: 15,
+    right: 15,
+    top: 15,
+    bottom: 25  // Extra space for footer
+  };
+
+  // Helper function to add page numbers and footer
+  const addPageFooter = (pageNum) => {
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Add generation date on left
+    doc.setFontSize(fonts.small);
+    doc.setTextColor(...colors.mediumGray);
+    doc.setFont("helvetica", "normal");
+    const generatedText = `Generated on ${new Date().toLocaleDateString()}`;
+    doc.text(generatedText, margins.left, pageHeight - 10);
+    
+    // Add page number on right
+    const pageText = `Page ${pageNum}`;
+    const pageTextWidth = doc.getTextWidth(pageText);
+    doc.text(pageText, pageWidth - margins.right - pageTextWidth, pageHeight - 10);
+    
+    // Reset color
+    doc.setTextColor(...colors.text);
+  };
+
+  // Helper function to add section header with background
+  const addSectionHeader = (text, yPos) => {
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Draw background rectangle
+    doc.setFillColor(...colors.lightGray);
+    doc.rect(margins.left - 2, yPos - 6, pageWidth - margins.left - margins.right + 4, 10, 'F');
+    
+    // Add header text
+    doc.setFontSize(fonts.h2);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...colors.text);
+    doc.text(text, margins.left, yPos);
+    
+    return yPos + 10; // Return new y position
+  };
+
   // Directly access document's title and location in content.js
   const videoTitle = cleanYouTubeTitle(document.title);
   const videoUrl = getYouTubeUrl();
-  let y = 10; // Start position in the PDF
-  const x = 10; // Start position in the PDF for images
-  const pageHeight = doc.internal.pageSize.height - 10; // Define the page height threshold for better page breaks
+  let y = margins.top;
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height - margins.bottom;
+  let currentPage = 1;
 
-  // Add "Clip Insights" title with a line
-  doc.setFontSize(16);
+  // Add "Clip Insights" title - centered and prominent
+  doc.setFontSize(fonts.h1);
   doc.setFont("helvetica", "bold");
-  // doc.text("Clip Insights", 10, y);
-  // y += 5;
-  // doc.line(10, y, 200, y);
-  // y += 10;
+  doc.setTextColor(...colors.primary);
   const title = "Clip Insights";
   const textWidth = doc.getTextWidth(title);
-  const centerX = (doc.internal.pageSize.width - textWidth) / 2; 
+  const centerX = (pageWidth - textWidth) / 2; 
   doc.text(title, centerX, y);
-  y += 2; 
+  y += 3;
+  
+  // Underline with primary color
+  doc.setDrawColor(...colors.primary);
+  doc.setLineWidth(0.5);
   doc.line(centerX, y, centerX + textWidth, y);
-  y += 13;
+  doc.setDrawColor(...colors.border);
+  doc.setLineWidth(0.1);
+  y += 12;
 
-  // Split and add the video title
-  doc.setFontSize(16);
+  // Add video title with link
+  doc.setFontSize(fonts.h2);
   doc.setFont("helvetica", "bold");
-  const titleLines = doc.splitTextToSize(videoTitle, 185);
+  doc.setTextColor(...colors.text);
+  const titleLines = doc.splitTextToSize(videoTitle, pageWidth - margins.left - margins.right);
   titleLines.forEach((line, index) => {
-    doc.textWithLink(line, x, y, { url: videoUrl });
-    y += index < titleLines.length - 1 ? 7 : 10;
+    doc.textWithLink(line, margins.left, y, { url: videoUrl });
+    y += index < titleLines.length - 1 ? 6 : 8;
   });
-  y -= 7;
-  doc.line(10, y, 200, y);
+  
+  // Separator line
+  doc.setDrawColor(...colors.border);
+  doc.line(margins.left, y, pageWidth - margins.right, y);
   y += 10;
 
   const savedScreenshots = await notesDatabase.getAllScreenshots(videoUrl);
@@ -963,83 +1031,67 @@ async function generatePDF() {
   const savedSummary = resultSummary[0]?.text;
   const resultKeypoints = await notesDatabase.getKeypoints(videoUrl);
   const savedKeypoints = resultKeypoints[0]?.text;
-  console.log("savedKeypoints", savedKeypoints);
 
   if (savedKeypoints) {
-    // Ensure enough space for two empty lines
-    if (y + 30 > pageHeight) {
+    // Ensure enough space for section header
+    if (y + 25 > pageHeight) {
+      addPageFooter(currentPage);
       doc.addPage();
-      y = 10;
+      currentPage++;
+      y = margins.top;
     }
 
-    // // Add logo
-    //    const logoUrl = chrome.runtime.getURL('logo1.jpg'); // Adjust path to your logo
-    //    await new Promise((resolve) => {
-    //        const img = new Image();
-    //        img.crossOrigin = 'Anonymous';
-    //       img.onload = function() {
-    // // Calculate height while maintaining aspect ratio
-    //            const imgWidth = 10; // Width of the logo
-    //            const imgHeight = (img.height * imgWidth) / img.width;
+    // Add section header with background
+    y = addSectionHeader("Key Points", y);
 
-    // // Add logo
-    //            doc.addImage(this, 'PNG', 10, y - 15, imgWidth, imgHeight);
-    //            resolve();
-    //        };
-    //        img.src = logoUrl;
-    //    });
-
-    // // Add website name and link
-    // doc.setFontSize(14);
-    // doc.setTextColor(0, 0, 255); // Blue color for the link
-    // doc.textWithLink('ClipInsights', 10, y, { url: 'https://app.clipinsights.com' }); // Replace with your actual website URL
-    // doc.setTextColor(0, 0, 0); // Reset to black color
-
-    // Add the "Key Points" heading
-    doc.setFontSize(16); // Larger font for the heading
-    doc.setFont("helvetica", "bold");
-    doc.text("Key Points", 10, y);
-    y += 3; // Add spacing after the heading
-    doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-
-    y += 10;
-    doc.setFontSize(14);
+    doc.setFontSize(fonts.body);
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(...colors.text);
 
     let keyPointsArray;
-
     try {
-      // Fix issue: Convert string representation of an array to a real array
       keyPointsArray = Array.isArray(savedKeypoints)
         ? savedKeypoints
-        : JSON.parse(savedKeypoints.replace(/'/g, '"')); // Convert single quotes to double quotes for valid JSON
+        : JSON.parse(savedKeypoints.replace(/'/g, '"'));
 
-      // Ensure it's an array
       if (!Array.isArray(keyPointsArray)) {
-        keyPointsArray = keyPointsArray.key_points || []; // Handle nested `key_points` structure
+        keyPointsArray = keyPointsArray.key_points || [];
       }
     } catch (error) {
       console.error("Error parsing keypoints:", error);
-      keyPointsArray = []; // Fallback to an empty array
+      keyPointsArray = [];
     }
 
-    // Add key points to PDF
-    keyPointsArray.forEach((point) => {
-      const wrappedText = doc.splitTextToSize(`• ${point}`, 180); // Wrap text within 180 width
+    // Add key points with better formatting
+    keyPointsArray.forEach((point, index) => {
+      const bulletPoint = `${index + 1}. ${point}`;
+      const wrappedText = doc.splitTextToSize(bulletPoint, pageWidth - margins.left - margins.right - 5);
 
-      wrappedText.forEach((line) => {
-        if (y + 10 > pageHeight) {
+      wrappedText.forEach((line, lineIndex) => {
+        if (y + 8 > pageHeight) {
+          addPageFooter(currentPage);
           doc.addPage();
-          y = 10; // Reset y for new page
+          currentPage++;
+          y = margins.top;
         }
-        doc.text(line, 10, y);
-        y += 7; // Adjust line spacing
+        
+        // Add subtle left border for visual grouping
+        if (lineIndex === 0) {
+          doc.setDrawColor(...colors.primary);
+          doc.setLineWidth(1);
+          doc.line(margins.left, y - 3, margins.left, y + 3);
+          doc.setDrawColor(...colors.border);
+          doc.setLineWidth(0.1);
+        }
+        
+        doc.text(line, margins.left + 3, y);
+        y += 5.5;
       });
+      
+      y += 2; // Extra spacing between points
     });
 
-    // Reset font to normal for the rest of the content
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
+    y += 10; // Section spacing
   }
   // Combine screenshots and notes into a single array and sort by timestamp
   const combinedContent = [];
@@ -1065,130 +1117,190 @@ async function generatePDF() {
   doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
   y += 10; // Add spacing after the line
 
-  // Reset font to normal for the rest of the content
-  doc.setFont("helvetica", "bold");
-
   // Process each item (note or screenshot) in the combined content
   for (const [index, item] of combinedContent.entries()) {
     if (item.type === "note") {
-      const lineHeight = 7;
+      const lineHeight = 6;
       
       // Check if we need a new page before starting the note
-      if (y + lineHeight + 10 > pageHeight) {
+      if (y + lineHeight + 15 > pageHeight) {
+        addPageFooter(currentPage);
         doc.addPage();
-        y = 10;
+        currentPage++;
+        y = margins.top;
       }
       
-      // Create the timestamp link first
-      doc.setTextColor(0, 0, 255);
+      // Create timestamp badge
+      const timestamp = convertSecondsToHMS(item.data.videoTimestamp);
+      doc.setFontSize(fonts.small);
+      doc.setFont("helvetica", "bold");
+      
+      // Draw timestamp badge background
+      const badgeWidth = doc.getTextWidth(timestamp) + 6;
+      doc.setFillColor(219, 234, 254); // Light blue background
+      doc.roundedRect(margins.left, y - 4, badgeWidth, 6, 1, 1, 'F');
+      
+      // Add timestamp text with link
+      doc.setTextColor(...colors.primary);
       doc.textWithLink(
-        `${convertSecondsToHMS(item.data.videoTimestamp)}:`,
-        10,
+        timestamp,
+        margins.left + 3,
         y,
         {
           url: `${videoUrl}&t=${Math.floor(item.data.videoTimestamp)}s`,
         }
       );
-      doc.setTextColor(0, 0, 0);
+      
+      y += 8;
 
-      // Add the note text after the timestamp
-      const noteText = ` ${item.data.text}`;
-      const noteLines = doc.splitTextToSize(noteText, 160);
+      // Add the note text with left border for visual grouping
+      doc.setFontSize(fonts.body);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...colors.text);
+      
+      const noteText = item.data.text;
+      const noteLines = doc.splitTextToSize(noteText, pageWidth - margins.left - margins.right - 8);
 
+      // Draw left border for note
+      const noteStartY = y;
+      
       // Write note lines one by one, checking for page breaks
       for (let i = 0; i < noteLines.length; i++) {
         // Check if we need a new page for this line
         if (y + lineHeight > pageHeight) {
+          // Draw border for previous page
+          doc.setDrawColor(...colors.primary);
+          doc.setLineWidth(1);
+          doc.line(margins.left, noteStartY - 2, margins.left, y - 2);
+          
+          addPageFooter(currentPage);
           doc.addPage();
-          y = 10;
+          currentPage++;
+          y = margins.top;
         }
         
-        // Write the line
-        doc.text(noteLines[i], 30, y);
+        // Write the line with indent
+        doc.text(noteLines[i], margins.left + 5, y);
         y += lineHeight;
       }
+      
+      // Draw left border for the note
+      doc.setDrawColor(...colors.primary);
+      doc.setLineWidth(1);
+      doc.line(margins.left, noteStartY - 2, margins.left, y - 2);
+      doc.setDrawColor(...colors.border);
+      doc.setLineWidth(0.1);
 
-      // Add padding after text
-      y += 5;
-
-      // Check if there's space for the line, if not add new page
+      // Add subtle separator line
+      y += 3;
       if (y + 5 > pageHeight) {
+        addPageFooter(currentPage);
         doc.addPage();
-        y = 10;
+        currentPage++;
+        y = margins.top;
       }
-
-      // Draw the line after the text
-      doc.line(10, y, 200, y);
-
-      // Add some spacing after the line before the next item
-      y += 5;
+      
+      doc.setDrawColor(...colors.border);
+      doc.line(margins.left, y, pageWidth - margins.right, y);
+      y += 8;
+      
     } else if (item.type === "screenshot") {
-      // const screenshotText = `Screenshot ${index + 1}`;
-
-      if (y + 110 + 10 > pageHeight) {
+      const imageHeight = 100;
+      const imageWidth = pageWidth - margins.left - margins.right;
+      
+      if (y + imageHeight + 20 > pageHeight) {
+        addPageFooter(currentPage);
         doc.addPage();
-        y = 10;
+        currentPage++;
+        y = margins.top;
       }
-
-      // doc.text(screenshotText, 10, y);
-      // y += 10;
 
       await new Promise((resolve) => {
         convertImageToDataUrl(item.data.url, (dataUrl) => {
-          doc.addImage(dataUrl, "JPEG", 10, y, 180, 100);
-          y += 110;
+          // Draw border around screenshot
+          doc.setDrawColor(...colors.border);
+          doc.setLineWidth(0.5);
+          doc.rect(margins.left, y, imageWidth, imageHeight);
+          
+          // Add screenshot
+          doc.addImage(dataUrl, "JPEG", margins.left, y, imageWidth, imageHeight);
+          y += imageHeight + 5;
 
-          doc.setTextColor(0, 0, 255);
+          // Create timestamp badge for screenshot
+          const timestamp = convertSecondsToHMS(item.data.videoTimestamp);
+          doc.setFontSize(fonts.small);
+          doc.setFont("helvetica", "bold");
+          
+          const badgeWidth = doc.getTextWidth(timestamp) + 6;
+          doc.setFillColor(219, 234, 254);
+          doc.roundedRect(margins.left, y - 4, badgeWidth, 6, 1, 1, 'F');
+          
+          doc.setTextColor(...colors.primary);
           doc.textWithLink(
-            `${convertSecondsToHMS(item.data.videoTimestamp)}`,
-            10,
+            timestamp,
+            margins.left + 3,
             y,
             {
               url: `${videoUrl}&t=${Math.floor(item.data.videoTimestamp)}s`,
             }
           );
-          y += 3;
-          doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-          doc.setTextColor(0, 0, 0);
-          y += 10;
+          
+          y += 5;
+          
+          // Separator line
+          doc.setDrawColor(...colors.border);
+          doc.setLineWidth(0.1);
+          doc.line(margins.left, y, pageWidth - margins.right, y);
+          doc.setTextColor(...colors.text);
+          y += 8;
 
           resolve();
         });
       });
     }
   }
+  
+  // Add footer to last page of notes/screenshots
+  if (combinedContent.length > 0) {
+    addPageFooter(currentPage);
+  }
 
   // Add the summary at the end of the PDF
   if (savedSummary) {
     doc.addPage();
-    y = 15;
+    currentPage++;
+    y = margins.top;
 
-    doc.setFontSize(16);
-    doc.text("Video Summary", 10, y);
-    y += 5;
-    doc.line(10, y, 200, y);
-    y += 10;
+    // Add section header
+    y = addSectionHeader("Video Summary", y);
 
-    doc.setFontSize(14);
+    doc.setFontSize(fonts.body);
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(...colors.text);
 
-    const maxWidth = 185;
-    const lineHeight = 7;
+    const lineHeight = 6;
     const cleanedSummary = savedSummary.replace(/\s+/g, ' ').trim();
-    const summaryLines = doc.splitTextToSize(cleanedSummary, maxWidth);
+    const summaryLines = doc.splitTextToSize(cleanedSummary, pageWidth - margins.left - margins.right);
 
     summaryLines.forEach((line) => {
       if (y + lineHeight > pageHeight) {
+        addPageFooter(currentPage);
         doc.addPage();
-        y = 20; // Ensuring space at the top of the new page
+        currentPage++;
+        y = margins.top;
       }
-      doc.text(line, 10, y);
+      doc.text(line, margins.left, y);
       y += lineHeight;
     });
+    
+    // Add footer to summary page
+    addPageFooter(currentPage);
+  } else if (combinedContent.length === 0 && !savedKeypoints) {
+    // If no content at all, still add footer to first page
+    addPageFooter(1);
   }
 
-//   // Generate the PDF file
-
+  // Generate the PDF file
   const pdfBlob = doc.output("blob");
   const fileName = `${cleanYouTubeTitle(document.title)}.pdf`;
 
