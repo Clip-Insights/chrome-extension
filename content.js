@@ -972,28 +972,28 @@ async function generatePDF() {
       y = 10;
     }
 
-    // Add logo
-       const logoUrl = chrome.runtime.getURL('logo1.jpg'); // Adjust path to your logo
-       await new Promise((resolve) => {
-           const img = new Image();
-           img.crossOrigin = 'Anonymous';
-          img.onload = function() {
-    // Calculate height while maintaining aspect ratio
-               const imgWidth = 10; // Width of the logo
-               const imgHeight = (img.height * imgWidth) / img.width;
+    // // Add logo
+    //    const logoUrl = chrome.runtime.getURL('logo1.jpg'); // Adjust path to your logo
+    //    await new Promise((resolve) => {
+    //        const img = new Image();
+    //        img.crossOrigin = 'Anonymous';
+    //       img.onload = function() {
+    // // Calculate height while maintaining aspect ratio
+    //            const imgWidth = 10; // Width of the logo
+    //            const imgHeight = (img.height * imgWidth) / img.width;
 
-    // Add logo
-               doc.addImage(this, 'PNG', 10, y - 15, imgWidth, imgHeight);
-               resolve();
-           };
-           img.src = logoUrl;
-       });
+    // // Add logo
+    //            doc.addImage(this, 'PNG', 10, y - 15, imgWidth, imgHeight);
+    //            resolve();
+    //        };
+    //        img.src = logoUrl;
+    //    });
 
-    // Add website name and link
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 255); // Blue color for the link
-    doc.textWithLink('ClipInsights', 10, y, { url: 'https://app.clipinsights.com' }); // Replace with your actual website URL
-    doc.setTextColor(0, 0, 0); // Reset to black color
+    // // Add website name and link
+    // doc.setFontSize(14);
+    // doc.setTextColor(0, 0, 255); // Blue color for the link
+    // doc.textWithLink('ClipInsights', 10, y, { url: 'https://app.clipinsights.com' }); // Replace with your actual website URL
+    // doc.setTextColor(0, 0, 0); // Reset to black color
 
     // Add the "Key Points" heading
     doc.setFontSize(16); // Larger font for the heading
@@ -1071,6 +1071,14 @@ async function generatePDF() {
   // Process each item (note or screenshot) in the combined content
   for (const [index, item] of combinedContent.entries()) {
     if (item.type === "note") {
+      const lineHeight = 7;
+      
+      // Check if we need a new page before starting the note
+      if (y + lineHeight + 10 > pageHeight) {
+        doc.addPage();
+        y = 10;
+      }
+      
       // Create the timestamp link first
       doc.setTextColor(0, 0, 255);
       doc.textWithLink(
@@ -1087,26 +1095,33 @@ async function generatePDF() {
       const noteText = ` ${item.data.text}`;
       const noteLines = doc.splitTextToSize(noteText, 160);
 
-      // Position the text slightly to the right of where the timestamp ends
-      doc.text(noteLines, 30, y);
+      // Write note lines one by one, checking for page breaks
+      for (let i = 0; i < noteLines.length; i++) {
+        // Check if we need a new page for this line
+        if (y + lineHeight > pageHeight) {
+          doc.addPage();
+          y = 10;
+        }
+        
+        // Write the line
+        doc.text(noteLines[i], 30, y);
+        y += lineHeight;
+      }
 
-      // Calculate the total height needed for all lines (assume each line needs ~7 units of space)
-      const lineHeight = 5;
-      const totalTextHeight = noteLines.length * lineHeight;
+      // Add padding after text
+      y += 5;
 
-      // Move y down by the total text height plus some padding
-      y += totalTextHeight + 5; // Add 5 units of padding after text
+      // Check if there's space for the line, if not add new page
+      if (y + 5 > pageHeight) {
+        doc.addPage();
+        y = 10;
+      }
 
       // Draw the line after the text
       doc.line(10, y, 200, y);
 
       // Add some spacing after the line before the next item
       y += 5;
-
-      if (y + noteLines.length * 10 + 10 > pageHeight) {
-        doc.addPage();
-        y = 10;
-      }
     } else if (item.type === "screenshot") {
       // const screenshotText = `Screenshot ${index + 1}`;
 
