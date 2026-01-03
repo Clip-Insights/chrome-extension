@@ -999,9 +999,9 @@ async function generatePDF() {
   const title = "Clip Insights";
   const textWidth = doc.getTextWidth(title);
   const centerX = (pageWidth - textWidth) / 2; 
-  doc.text(title, centerX, y);
+  doc.textWithLink(title, centerX, y, { url: "https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj" });
   y += 3;
-  
+  // https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj?utm_source=item-share-cb
   // Underline with primary color
   doc.setDrawColor(...colors.primary);
   doc.setLineWidth(0.5);
