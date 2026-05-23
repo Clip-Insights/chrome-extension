@@ -1416,88 +1416,100 @@ function convertImageToDataUrl(url, callback) {
   };
 }
 
+function decodeHTMLEntities(text) {
+  const ta = document.createElement('textarea');
+  ta.innerHTML = text;
+  return ta.value;
+}
+
 /**
- * Generic function to fetch YouTube transcript and return as JSON
- * @param {string} youtubeUrl - The YouTube video URL
- * @returns {Promise<Object>} - Returns { success: boolean, data: Array<{start: number, duration: number, text: string}>, error: string }
+ * Fetches YouTube transcript using the Innertube player API with the ANDROID client.
+ * Mirrors youtube-transcript-api (Python) exactly:
+ *   1. GET watch page → extract INNERTUBE_API_KEY
+ *   2. POST /youtubei/v1/player with ANDROID client (bypasses PO-token requirement)
+ *   3. GET the XML transcript URL from captionTracks[].baseUrl
+ *   4. Parse XML: decode HTML entities + strip HTML tags per snippet
  */
 async function getYoutubeTranscript(youtubeUrl) {
   try {
-    // Extract video ID from URL
-    const urlParams = new URLSearchParams(new URL(youtubeUrl).search);
-    const videoId = urlParams.get('v');
-    
+    const videoId = new URLSearchParams(new URL(youtubeUrl).search).get('v');
     if (!videoId) {
       return { success: false, data: null, error: "Invalid YouTube URL" };
     }
 
-    // 1️⃣ Fetch video HTML
-    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const html = await fetch(watchUrl).then(r => r.text());
+    // Step 1 — fetch watch page with English language preference
+    const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+    }).then(r => r.text());
 
-    // 2️⃣ Extract INNERTUBE_API_KEY using regex
-    const apiKeyMatch = html.match(/"INNERTUBE_API_KEY"\s*:\s*"([^"]+)"/);
-    if (!apiKeyMatch) {
-      console.error("INNERTUBE_API_KEY not found");
-      return { success: false, data: null, error: "INNERTUBE_API_KEY not found" };
-    }
-    const apiKey = apiKeyMatch[1];
-    console.log("API KEY:", apiKey);
+    // Step 2 — extract INNERTUBE_API_KEY (exact regex from youtube-transcript-api)
+    // Fall back to the well-known public key if the page no longer embeds it
+    const apiKeyMatch = html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/);
+    const apiKey = apiKeyMatch?.[1] ?? 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
 
-    // 3️⃣ Call Innertube player API
-    const innertubeUrl = `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`;
+    // Step 3 — POST to Innertube player API using ANDROID client context.
+    // The ANDROID client does NOT require PO (Proof-of-Origin) tokens,
+    // unlike the WEB client which started requiring them in 2024 and
+    // returns a response with no captions when they are absent.
+    const playerData = await fetch(
+      `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            client: { clientName: 'ANDROID', clientVersion: '20.10.38' }
+          },
+          videoId
+        })
+      }
+    ).then(r => r.json());
 
-    const innertubeResponse = await fetch(innertubeUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        context: {
-          client: {
-            clientName: "WEB",
-            clientVersion: "2.20241201.00.00"
-          }
-        },
-        videoId: videoId
-      })
-    }).then(r => r.json());
-
-    // 4️⃣ Extract captions JSON
-    const captions = innertubeResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-
-    if (!captions || captions.length === 0) {
-      console.error("No captions available");
+    // Step 4 — navigate to captionTracks array
+    const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    if (!captionTracks?.length) {
       return { success: false, data: null, error: "No captions available" };
     }
 
-    console.log("Available caption tracks:", captions);
+    // Step 5 — select best track: manual English > auto English > first available
+    const track =
+      captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr') ||
+      captionTracks.find(t => t.languageCode === 'en') ||
+      captionTracks[0];
 
-    // 5️⃣ Pick first track (usually auto-generated English)
-    const track = captions[0];
-    console.log("Using track:", track.languageCode, track.kind);
-
-    // 6️⃣ Fetch raw transcript XML
-    const transcriptXml = await fetch(track.baseUrl).then(r => r.text());
-
-    // 7️⃣ Parse XML and convert to JSON structure
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(transcriptXml, "text/xml");
-    const textElements = xmlDoc.getElementsByTagName("text");
-
-    // Convert to JSON array
-    const transcriptData = [];
-    for (let i = 0; i < textElements.length; i++) {
-      const element = textElements[i];
-      transcriptData.push({
-        start: parseFloat(element.getAttribute("start")),
-        duration: parseFloat(element.getAttribute("dur") || 0),
-        text: element.textContent.trim()
-      });
+    // Step 6 — clean the baseUrl exactly as youtube-transcript-api does:
+    //   • remove &fmt=srv3 (that format is JSON/SRV3, we need plain XML)
+    //   • &exp=xpe in the URL means a PoToken is required → report error
+    const baseUrl = track.baseUrl.replace(/&fmt=srv3/g, '');
+    if (baseUrl.includes('&exp=xpe')) {
+      return { success: false, data: null, error: "Transcript requires authentication (PoToken)" };
     }
 
-    console.log("Transcript data parsed:", transcriptData.length, "segments");
-    return { success: true, data: transcriptData, error: null };
+    // Step 7 — fetch the XML transcript
+    const xml = await fetch(baseUrl).then(r => r.text());
+
+    // Step 8 — parse XML, mirroring _TranscriptParser in the Python package:
+    //   unescape HTML entities, then strip any embedded HTML tags
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const els = doc.getElementsByTagName('text');
+    const data = [];
+
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
+      if (!el.textContent) continue;
+      const text = decodeHTMLEntities(el.textContent)
+        .replace(/<[^>]*>/g, '')  // strip HTML tags embedded in transcript text
+        .trim();
+      if (text) {
+        data.push({
+          start: parseFloat(el.getAttribute('start')),
+          duration: parseFloat(el.getAttribute('dur') || '0'),
+          text
+        });
+      }
+    }
+
+    return { success: true, data, error: null };
 
   } catch (error) {
     console.error("Error fetching transcript:", error);
