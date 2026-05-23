@@ -1,8 +1,8 @@
 // content.js
 let notesDatabase = ""; // Store the notes database
 
-//const API_URL = 'https://app.clipinsights.com'
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = 'https://clipinsights-241407463290.europe-west1.run.app'
+// const API_URL = "http://127.0.0.1:8000";
 
 const ENCRYPTION_KEY = "my-strong-encryption-key"; // Replace with a secret key (keep this secure)
 
@@ -87,7 +87,7 @@ function injectClipInsightsNotepad() {
           color: #333;
           border-radius: 16px;
           margin-bottom: 20px;
-          height: 512px; /* Set fixed height */
+          height: 494px; /* Set fixed height */
           overflow-y: auto;
         }
         /* Additional styles... */
@@ -178,7 +178,6 @@ const uploadButton = ClipInsightsNotepadDiv.querySelector("#clipinsights__upload
 uploadButton?.addEventListener("click", async () => {
   // Save the original content BEFORE disabling the button
   const originalContent = uploadButton.innerHTML;
-  console.log("originalContent", originalContent);
   // Now disable the button and update its content
   uploadButton.disabled = true;
   uploadButton.innerHTML = "Uploading...";
@@ -324,10 +323,71 @@ document.addEventListener("keydown", (event) => {
 
       ClipInsightsNotepadDiv.querySelector(
         "#clipinsights__chatBtn"
-      )?.addEventListener("click", () => {
+      )?.addEventListener("click", async () => {
         // console.log("Chat button clicked!", chatContainer);
         mainContent.style.display = "none";
         chatContainer.style.display = "block";
+        
+        // Initialize limit badge with current remaining count
+        const CHAT_LIMIT_KEY = "yt-chat-limit";
+        let chatLimitData = localStorage.getItem(CHAT_LIMIT_KEY);
+        if (chatLimitData) {
+          chatLimitData = JSON.parse(chatLimitData);
+          if (Date.now() - chatLimitData.timestamp > 24 * 60 * 60 * 1000) {
+            chatLimitData = { count: 0, timestamp: Date.now() };
+          }
+        } else {
+          chatLimitData = { count: 0, timestamp: Date.now() };
+        }
+        const remaining = 10 - chatLimitData.count;
+        updateLimitBadge(remaining);
+        
+        // Proactively fetch transcript context
+        const contextTimeElement = document.getElementById("clipinsights__contextTime");
+        const contextIcon = document.getElementById("clipinsights__contextIcon");
+        
+        // Set loading state
+        if (contextTimeElement && contextIcon) {
+          contextTimeElement.textContent = "Analyzing video...";
+          contextTimeElement.classList.add("loading");
+          contextIcon.classList.add("loading");
+          
+          try {
+            const youtubeUrl = window.location.href;
+            if (youtubeUrl && youtubeUrl.includes("youtube.com/watch")) {
+              const transcription = await fetchTranscript(youtubeUrl);
+              
+              // Remove loading state
+              contextTimeElement.classList.remove("loading");
+              contextIcon.classList.remove("loading");
+              contextTimeElement.classList.remove("error");
+              
+              // Update with actual context info
+              if (transcription.lastTagTime !== -1) {
+                const sliceTimeInMinutes = (transcription.lastTagTime / 60).toFixed(2);
+                contextTimeElement.textContent = `Context up to ${sliceTimeInMinutes} min`;
+              } else if (transcription.transcript === "Transcript not available" || 
+                         transcription.transcript === "No captions available" ||
+                         transcription.transcript === "Failed to fetch transcript") {
+                contextTimeElement.textContent = "No transcript available";
+                contextTimeElement.classList.add("error");
+              } else {
+                contextTimeElement.textContent = "Full video context";
+              }
+            } else {
+              contextTimeElement.textContent = "Not a YouTube video";
+              contextTimeElement.classList.remove("loading");
+              contextIcon.classList.remove("loading");
+              contextTimeElement.classList.add("error");
+            }
+          } catch (error) {
+            console.error("Error fetching context:", error);
+            contextTimeElement.textContent = "Context unavailable";
+            contextTimeElement.classList.remove("loading");
+            contextIcon.classList.remove("loading");
+            contextTimeElement.classList.add("error");
+          }
+        }
       });
       ClipInsightsNotepadDiv.querySelector(
         "#clipinsights__closeChat"
@@ -409,14 +469,12 @@ function addNoteToPopup(note, time) {
   // Create delete button for note
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("clipinsights__delete-btn");
-  deleteBtn.innerHTML = "×";
-  deleteBtn.title = "Delete note";
+  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span class="clipinsights__btnTooltip">Delete</span>`;
 
   // Create update button for note
   const updateBtn = document.createElement("button");
   updateBtn.classList.add("clipinsights__update-btn");
-  updateBtn.innerHTML = "✎";
-  updateBtn.title = "Edit note";
+  updateBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg><span class="clipinsights__btnTooltip">Edit</span>`;
 
   // Add click handler for delete button
   deleteBtn.addEventListener("click", async () => {
@@ -617,11 +675,14 @@ function addScreenshotToPopup(screenshotUrl, time) {
   const div = document.createElement("div");
   div.classList.add("clipinsights__screenshot-note");
 
+  // Create action buttons container for consistent positioning
+  const actionBtns = document.createElement("div");
+  actionBtns.classList.add("clipinsights__note-actions");
+
   // Create delete button
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("clipinsights__delete-btn");
-  deleteBtn.innerHTML = "×"; // Using × symbol for the cross
-  deleteBtn.title = "Delete screenshot";
+  deleteBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span class="clipinsights__btnTooltip">Delete</span>`;
 
   // Add click handler for delete button
   deleteBtn.addEventListener("click", async () => {
@@ -650,6 +711,9 @@ function addScreenshotToPopup(screenshotUrl, time) {
     }
   });
 
+  // Add delete button to action container
+  actionBtns.appendChild(deleteBtn);
+
   const img = document.createElement("img");
   img.src = screenshotUrl;
   img.classList.add("clipinsights__screenshot");
@@ -662,8 +726,8 @@ function addScreenshotToPopup(screenshotUrl, time) {
     });
   };
 
-  // Add delete button and image to container
-  div.appendChild(deleteBtn);
+  // Add action buttons and image to container
+  div.appendChild(actionBtns);
   div.appendChild(img);
 
   const timestamp = document.createElement("p");
@@ -859,38 +923,156 @@ async function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
+  // PDF styling constants
+  const colors = {
+    primary: [37, 99, 235],      // Modern blue #2563EB
+    text: [33, 33, 33],           // Dark gray #212121
+    lightGray: [243, 244, 246],   // #F3F4F6
+    mediumGray: [156, 163, 175],  // #9CA3AF
+    border: [229, 231, 235]       // #E5E7EB
+  };
+  
+  const fonts = {
+    h1: 18,
+    h2: 14,
+    body: 11,
+    small: 9
+  };
+  
+  const margins = {
+    left: 15,
+    right: 15,
+    top: 15,
+    bottom: 25  // Extra space for footer
+  };
+
+  // Helper function to convert SVG to high-quality PNG
+  const convertSvgToPng = (svgString, width, height) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const scale = 4; // 4x resolution for crisp rendering
+      
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      
+      const img = new Image();
+      img.onload = () => {
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      img.src = url;
+    });
+  };
+
+  // ClipInsights logo SVG
+  const logoSvgString = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="28" height="28" rx="12" fill="#1C1C1C" />
+  <g transform="rotate(-45 14 14) scale(0.75)">
+    <rect x="11" y="10" width="20" height="3" fill="#FFFFFF" rx="1" />
+    <rect x="4" y="17" width="20" height="3" fill="#FFFFFF" rx="1" />
+    <rect x="11" y="24" width="20" height="3" fill="#FFFFFF" rx="1" />
+  </g>
+</svg>`;
+
+  // Convert SVG to PNG at high resolution
+  const logoPng = await convertSvgToPng(logoSvgString, 28, 28);
+
+  // Helper function to add page numbers and footer
+  const addPageFooter = (pageNum) => {
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Add small logo on the left
+    const logoSize = 4;
+    doc.addImage(logoPng, 'PNG', margins.left, pageHeight - 12, logoSize, logoSize);
+    
+    // Add generation date next to logo
+    doc.setFontSize(fonts.small);
+    doc.setTextColor(...colors.mediumGray);
+    doc.setFont("helvetica", "normal");
+    const generatedText = `Generated on ${new Date().toLocaleDateString()}`;
+    doc.text(generatedText, margins.left + logoSize + 3, pageHeight - 10);
+    
+    // Add page number on right
+    const pageText = `Page ${pageNum}`;
+    const pageTextWidth = doc.getTextWidth(pageText);
+    doc.text(pageText, pageWidth - margins.right - pageTextWidth, pageHeight - 10);
+    
+    // Reset color
+    doc.setTextColor(...colors.text);
+  };
+
+  // Helper function to add section header with background
+  const addSectionHeader = (text, yPos) => {
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Draw background rectangle
+    doc.setFillColor(...colors.lightGray);
+    doc.rect(margins.left - 2, yPos - 6, pageWidth - margins.left - margins.right + 4, 10, 'F');
+    
+    // Add header text
+    doc.setFontSize(fonts.h2);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...colors.text);
+    doc.text(text, margins.left, yPos);
+    
+    return yPos + 10; // Return new y position
+  };
+
   // Directly access document's title and location in content.js
   const videoTitle = cleanYouTubeTitle(document.title);
   const videoUrl = getYouTubeUrl();
-  let y = 10; // Start position in the PDF
-  const x = 10; // Start position in the PDF for images
-  const pageHeight = doc.internal.pageSize.height - 10; // Define the page height threshold for better page breaks
+  let y = margins.top;
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height - margins.bottom;
+  let currentPage = 1;
 
-  // Add "Clip Insights" title with a line
-  doc.setFontSize(16);
-  doc.setFont("courier", "bold");
-  // doc.text("Clip Insights", 10, y);
-  // y += 5;
-  // doc.line(10, y, 200, y);
-  // y += 10;
-  const title = "Clip Insights";
-  const textWidth = doc.getTextWidth(title);
-  const centerX = (doc.internal.pageSize.width - textWidth) / 2; 
-  doc.text(title, centerX, y);
-  y += 2; 
-  doc.line(centerX, y, centerX + textWidth, y);
-  y += 13;
-
-  // Split and add the video title
-  doc.setFontSize(16);
+  // Add logo and "Clip Insights" title - centered together
+  doc.setFontSize(fonts.h1);
   doc.setFont("helvetica", "bold");
-  const titleLines = doc.splitTextToSize(videoTitle, 185);
+  doc.setTextColor(...colors.primary);
+  const title = "Clip Insights";
+  const titleWidth = doc.getTextWidth(title);
+  const logoSize = 10;
+  const spacing = 4; // Space between logo and title
+  const totalWidth = logoSize + spacing + titleWidth;
+  const startX = (pageWidth - totalWidth) / 2;
+  
+  // Add logo
+  doc.addImage(logoPng, 'PNG', startX, y - 7, logoSize, logoSize);
+  
+  // Add title next to logo
+  const titleX = startX + logoSize + spacing;
+  doc.textWithLink(title, titleX, y, { url: "https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj" });
+  y += 3;
+  // https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj?utm_source=item-share-cb
+  // Underline with primary color (only under text, not logo)
+  doc.setDrawColor(...colors.primary);
+  doc.setLineWidth(0.5);
+  doc.line(titleX, y, titleX + titleWidth, y);
+  doc.setDrawColor(...colors.border);
+  doc.setLineWidth(0.1);
+  y += 12;
+
+  // Add video title with link
+  doc.setFontSize(fonts.h2);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.text);
+  const titleLines = doc.splitTextToSize(videoTitle, pageWidth - margins.left - margins.right);
   titleLines.forEach((line, index) => {
-    doc.textWithLink(line, x, y, { url: videoUrl });
-    y += index < titleLines.length - 1 ? 7 : 10;
+    doc.textWithLink(line, margins.left, y, { url: videoUrl });
+    y += index < titleLines.length - 1 ? 6 : 8;
   });
-  y -= 7;
-  doc.line(10, y, 200, y);
+  
+  // Separator line
+  doc.setDrawColor(...colors.border);
+  doc.line(margins.left, y, pageWidth - margins.right, y);
   y += 10;
 
   const savedScreenshots = await notesDatabase.getAllScreenshots(videoUrl);
@@ -899,83 +1081,67 @@ async function generatePDF() {
   const savedSummary = resultSummary[0]?.text;
   const resultKeypoints = await notesDatabase.getKeypoints(videoUrl);
   const savedKeypoints = resultKeypoints[0]?.text;
-  console.log("savedKeypoints", savedKeypoints);
 
   if (savedKeypoints) {
-    // Ensure enough space for two empty lines
-    if (y + 30 > pageHeight) {
+    // Ensure enough space for section header
+    if (y + 25 > pageHeight) {
+      addPageFooter(currentPage);
       doc.addPage();
-      y = 10;
+      currentPage++;
+      y = margins.top;
     }
 
-    // Add logo
-    //    const logoUrl = chrome.runtime.getURL('logo1.jpg'); // Adjust path to your logo
-    //    await new Promise((resolve) => {
-    //        const img = new Image();
-    //        img.crossOrigin = 'Anonymous';
-    ////       img.onload = function() {
-    // Calculate height while maintaining aspect ratio
-    //            const imgWidth = 10; // Width of the logo
-    //            const imgHeight = (img.height * imgWidth) / img.width;
+    // Add section header with background
+    y = addSectionHeader("Key Points", y);
 
-    // Add logo
-    //            doc.addImage(this, 'PNG', 10, y - 15, imgWidth, imgHeight);
-    //            resolve();
-    //        };
-    //        img.src = logoUrl;
-    //    });
-
-    // Add website name and link
-    // doc.setFontSize(14);
-    // doc.setTextColor(0, 0, 255); // Blue color for the link
-    // doc.textWithLink('ClipInsights', 10, y, { url: 'https://app.clipinsights.com' }); // Replace with your actual website URL
-    // doc.setTextColor(0, 0, 0); // Reset to black color
-
-    // Add the "Key Points" heading
-    doc.setFontSize(16); // Larger font for the heading
-    doc.setFont("helvetica", "bold");
-    doc.text("Key Points", 10, y);
-    y += 3; // Add spacing after the heading
-    doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-
-    y += 10;
-    doc.setFontSize(14);
+    doc.setFontSize(fonts.body);
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(...colors.text);
 
     let keyPointsArray;
-
     try {
-      // Fix issue: Convert string representation of an array to a real array
       keyPointsArray = Array.isArray(savedKeypoints)
         ? savedKeypoints
-        : JSON.parse(savedKeypoints.replace(/'/g, '"')); // Convert single quotes to double quotes for valid JSON
+        : JSON.parse(savedKeypoints.replace(/'/g, '"'));
 
-      // Ensure it's an array
       if (!Array.isArray(keyPointsArray)) {
-        keyPointsArray = keyPointsArray.key_points || []; // Handle nested `key_points` structure
+        keyPointsArray = keyPointsArray.key_points || [];
       }
     } catch (error) {
       console.error("Error parsing keypoints:", error);
-      keyPointsArray = []; // Fallback to an empty array
+      keyPointsArray = [];
     }
 
-    // Add key points to PDF
-    keyPointsArray.forEach((point) => {
-      const wrappedText = doc.splitTextToSize(`• ${point}`, 180); // Wrap text within 180 width
+    // Add key points with better formatting
+    keyPointsArray.forEach((point, index) => {
+      const bulletPoint = `${index + 1}. ${point}`;
+      const wrappedText = doc.splitTextToSize(bulletPoint, pageWidth - margins.left - margins.right - 5);
 
-      wrappedText.forEach((line) => {
-        if (y + 10 > pageHeight) {
+      wrappedText.forEach((line, lineIndex) => {
+        if (y + 8 > pageHeight) {
+          addPageFooter(currentPage);
           doc.addPage();
-          y = 10; // Reset y for new page
+          currentPage++;
+          y = margins.top;
         }
-        doc.text(line, 10, y);
-        y += 7; // Adjust line spacing
+        
+        // Add subtle left border for visual grouping
+        if (lineIndex === 0) {
+          doc.setDrawColor(...colors.primary);
+          doc.setLineWidth(1);
+          doc.line(margins.left, y - 3, margins.left, y + 3);
+          doc.setDrawColor(...colors.border);
+          doc.setLineWidth(0.1);
+        }
+        
+        doc.text(line, margins.left + 3, y);
+        y += 5.5;
       });
+      
+      y += 2; // Extra spacing between points
     });
 
-    // Reset font to normal for the rest of the content
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
+    y += 10; // Section spacing
   }
   // Combine screenshots and notes into a single array and sort by timestamp
   const combinedContent = [];
@@ -992,124 +1158,199 @@ async function generatePDF() {
 
   y += 10;
   // Add "Screenshots & Notes" heading with a proper line underneath
-  // doc.setFontSize(16);
-  // doc.setFont("helvetica", "bold");
-  // doc.text("Screenshots & Notes", 10, y);
-  // doc.setFontSize(12);
-  // Draw a horizontal line below the heading
-  // y += 3;
-  // doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-  // y += 10; // Add spacing after the line
-
-  // Reset font to normal for the rest of the content
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
+  doc.text("Screenshots & Notes", 10, y);
+  doc.setFontSize(12);
+  // Draw a horizontal line below the heading
+  y += 3;
+  doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
+  y += 10; // Add spacing after the line
 
   // Process each item (note or screenshot) in the combined content
   for (const [index, item] of combinedContent.entries()) {
     if (item.type === "note") {
-      // Create the timestamp link first
-      doc.setTextColor(0, 0, 255);
+      const lineHeight = 6;
+      
+      // Check if we need a new page before starting the note
+      if (y + lineHeight + 15 > pageHeight) {
+        addPageFooter(currentPage);
+        doc.addPage();
+        currentPage++;
+        y = margins.top;
+      }
+      
+      // Create timestamp badge
+      const timestamp = convertSecondsToHMS(item.data.videoTimestamp);
+      doc.setFontSize(fonts.small);
+      doc.setFont("helvetica", "bold");
+      
+      // Draw timestamp badge background
+      const badgeWidth = doc.getTextWidth(timestamp) + 6;
+      doc.setFillColor(219, 234, 254); // Light blue background
+      doc.roundedRect(margins.left, y - 4, badgeWidth, 6, 1, 1, 'F');
+      
+      // Add timestamp text with link
+      doc.setTextColor(...colors.primary);
       doc.textWithLink(
-        `${convertSecondsToHMS(item.data.videoTimestamp)}:`,
-        10,
+        timestamp,
+        margins.left + 3,
         y,
         {
           url: `${videoUrl}&t=${Math.floor(item.data.videoTimestamp)}s`,
         }
       );
-      doc.setTextColor(0, 0, 0);
+      
+      y += 8;
 
-      // Add the note text after the timestamp
-      const noteText = ` ${item.data.text}`;
-      const noteLines = doc.splitTextToSize(noteText, 160);
+      // Add the note text with left border for visual grouping
+      doc.setFontSize(fonts.body);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...colors.text);
+      
+      const noteText = item.data.text;
+      const noteLines = doc.splitTextToSize(noteText, pageWidth - margins.left - margins.right - 8);
 
-      // Position the text slightly to the right of where the timestamp ends
-      doc.text(noteLines, 30, y);
-
-      // Calculate the total height needed for all lines (assume each line needs ~7 units of space)
-      const lineHeight = 5;
-      const totalTextHeight = noteLines.length * lineHeight;
-
-      // Move y down by the total text height plus some padding
-      y += totalTextHeight + 5; // Add 5 units of padding after text
-
-      // Draw the line after the text
-      doc.line(10, y, 200, y);
-
-      // Add some spacing after the line before the next item
-      y += 5;
-
-      if (y + noteLines.length * 10 + 10 > pageHeight) {
-        doc.addPage();
-        y = 10;
+      // Draw left border for note
+      const noteStartY = y;
+      
+      // Write note lines one by one, checking for page breaks
+      for (let i = 0; i < noteLines.length; i++) {
+        // Check if we need a new page for this line
+        if (y + lineHeight > pageHeight) {
+          // Draw border for previous page
+          doc.setDrawColor(...colors.primary);
+          doc.setLineWidth(1);
+          doc.line(margins.left, noteStartY - 2, margins.left, y - 2);
+          
+          addPageFooter(currentPage);
+          doc.addPage();
+          currentPage++;
+          y = margins.top;
+        }
+        
+        // Write the line with indent
+        doc.text(noteLines[i], margins.left + 5, y);
+        y += lineHeight;
       }
+      
+      // Draw left border for the note
+      doc.setDrawColor(...colors.primary);
+      doc.setLineWidth(1);
+      doc.line(margins.left, noteStartY - 2, margins.left, y - 2);
+      doc.setDrawColor(...colors.border);
+      doc.setLineWidth(0.1);
+
+      // Add subtle separator line
+      y += 3;
+      if (y + 5 > pageHeight) {
+        addPageFooter(currentPage);
+        doc.addPage();
+        currentPage++;
+        y = margins.top;
+      }
+      
+      doc.setDrawColor(...colors.border);
+      doc.line(margins.left, y, pageWidth - margins.right, y);
+      y += 8;
+      
     } else if (item.type === "screenshot") {
-      // const screenshotText = `Screenshot ${index + 1}`;
-
-      if (y + 110 + 10 > pageHeight) {
+      const imageHeight = 100;
+      const imageWidth = pageWidth - margins.left - margins.right;
+      
+      if (y + imageHeight + 20 > pageHeight) {
+        addPageFooter(currentPage);
         doc.addPage();
-        y = 10;
+        currentPage++;
+        y = margins.top;
       }
-
-      // doc.text(screenshotText, 10, y);
-      // y += 10;
 
       await new Promise((resolve) => {
         convertImageToDataUrl(item.data.url, (dataUrl) => {
-          doc.addImage(dataUrl, "JPEG", 10, y, 180, 100);
-          y += 110;
+          // Draw border around screenshot
+          doc.setDrawColor(...colors.border);
+          doc.setLineWidth(0.5);
+          doc.rect(margins.left, y, imageWidth, imageHeight);
+          
+          // Add screenshot
+          doc.addImage(dataUrl, "JPEG", margins.left, y, imageWidth, imageHeight);
+          y += imageHeight + 5;
 
-          doc.setTextColor(0, 0, 255);
+          // Create timestamp badge for screenshot
+          const timestamp = convertSecondsToHMS(item.data.videoTimestamp);
+          doc.setFontSize(fonts.small);
+          doc.setFont("helvetica", "bold");
+          
+          const badgeWidth = doc.getTextWidth(timestamp) + 6;
+          doc.setFillColor(219, 234, 254);
+          doc.roundedRect(margins.left, y - 4, badgeWidth, 6, 1, 1, 'F');
+          
+          doc.setTextColor(...colors.primary);
           doc.textWithLink(
-            `${convertSecondsToHMS(item.data.videoTimestamp)}`,
-            10,
+            timestamp,
+            margins.left + 3,
             y,
             {
               url: `${videoUrl}&t=${Math.floor(item.data.videoTimestamp)}s`,
             }
           );
-          y += 3;
-          doc.line(10, y, 200, y); // (x1, y1, x2, y2) coordinates for the line
-          doc.setTextColor(0, 0, 0);
-          y += 10;
+          
+          y += 5;
+          
+          // Separator line
+          doc.setDrawColor(...colors.border);
+          doc.setLineWidth(0.1);
+          doc.line(margins.left, y, pageWidth - margins.right, y);
+          doc.setTextColor(...colors.text);
+          y += 8;
 
           resolve();
         });
       });
     }
   }
+  
+  // Add footer to last page of notes/screenshots
+  if (combinedContent.length > 0) {
+    addPageFooter(currentPage);
+  }
 
   // Add the summary at the end of the PDF
   if (savedSummary) {
     doc.addPage();
-    y = 15;
+    currentPage++;
+    y = margins.top;
 
-    doc.setFontSize(16);
-    doc.text("Video Summary", 10, y);
-    y += 5;
-    doc.line(10, y, 200, y);
-    y += 10;
+    // Add section header
+    y = addSectionHeader("Video Summary", y);
 
-    doc.setFontSize(14);
+    doc.setFontSize(fonts.body);
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(...colors.text);
 
-    const maxWidth = 185;
-    const lineHeight = 7;
+    const lineHeight = 6;
     const cleanedSummary = savedSummary.replace(/\s+/g, ' ').trim();
-    const summaryLines = doc.splitTextToSize(cleanedSummary, maxWidth);
+    const summaryLines = doc.splitTextToSize(cleanedSummary, pageWidth - margins.left - margins.right);
 
     summaryLines.forEach((line) => {
       if (y + lineHeight > pageHeight) {
+        addPageFooter(currentPage);
         doc.addPage();
-        y = 20; // Ensuring space at the top of the new page
+        currentPage++;
+        y = margins.top;
       }
-      doc.text(line, 10, y);
+      doc.text(line, margins.left, y);
       y += lineHeight;
     });
+    
+    // Add footer to summary page
+    addPageFooter(currentPage);
+  } else if (combinedContent.length === 0 && !savedKeypoints) {
+    // If no content at all, still add footer to first page
+    addPageFooter(1);
   }
 
-//   // Generate the PDF file
-
+  // Generate the PDF file
   const pdfBlob = doc.output("blob");
   const fileName = `${cleanYouTubeTitle(document.title)}.pdf`;
 
@@ -1141,7 +1382,7 @@ async function uploadPDF() {
   formData.append("file", pdfBlob, fileName);
 
   try {
-    const response = await fetch(`${API_URL}/api/userspace/upload-file/`, {
+    const response = await fetch(`${API_URL}/api/userspace/files/`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
       body: formData
@@ -1175,38 +1416,121 @@ function convertImageToDataUrl(url, callback) {
   };
 }
 
+function decodeHTMLEntities(text) {
+  const ta = document.createElement('textarea');
+  ta.innerHTML = text;
+  return ta.value;
+}
+
+/**
+ * Fetches YouTube transcript using the Innertube player API with the ANDROID client.
+ * Mirrors youtube-transcript-api (Python) exactly:
+ *   1. GET watch page → extract INNERTUBE_API_KEY
+ *   2. POST /youtubei/v1/player with ANDROID client (bypasses PO-token requirement)
+ *   3. GET the XML transcript URL from captionTracks[].baseUrl
+ *   4. Parse XML: decode HTML entities + strip HTML tags per snippet
+ */
+async function getYoutubeTranscript(youtubeUrl) {
+  try {
+    const videoId = new URLSearchParams(new URL(youtubeUrl).search).get('v');
+    if (!videoId) {
+      return { success: false, data: null, error: "Invalid YouTube URL" };
+    }
+
+    // Step 1 — fetch watch page with English language preference
+    const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+    }).then(r => r.text());
+
+    // Step 2 — extract INNERTUBE_API_KEY (exact regex from youtube-transcript-api)
+    // Fall back to the well-known public key if the page no longer embeds it
+    const apiKeyMatch = html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/);
+    const apiKey = apiKeyMatch?.[1] ?? 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+
+    // Step 3 — POST to Innertube player API using ANDROID client context.
+    // The ANDROID client does NOT require PO (Proof-of-Origin) tokens,
+    // unlike the WEB client which started requiring them in 2024 and
+    // returns a response with no captions when they are absent.
+    const playerData = await fetch(
+      `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            client: { clientName: 'ANDROID', clientVersion: '20.10.38' }
+          },
+          videoId
+        })
+      }
+    ).then(r => r.json());
+
+    // Step 4 — navigate to captionTracks array
+    const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    if (!captionTracks?.length) {
+      return { success: false, data: null, error: "No captions available" };
+    }
+
+    // Step 5 — select best track: manual English > auto English > first available
+    const track =
+      captionTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr') ||
+      captionTracks.find(t => t.languageCode === 'en') ||
+      captionTracks[0];
+
+    // Step 6 — clean the baseUrl exactly as youtube-transcript-api does:
+    //   • remove &fmt=srv3 (that format is JSON/SRV3, we need plain XML)
+    //   • &exp=xpe in the URL means a PoToken is required → report error
+    const baseUrl = track.baseUrl.replace(/&fmt=srv3/g, '');
+    if (baseUrl.includes('&exp=xpe')) {
+      return { success: false, data: null, error: "Transcript requires authentication (PoToken)" };
+    }
+
+    // Step 7 — fetch the XML transcript
+    const xml = await fetch(baseUrl).then(r => r.text());
+
+    // Step 8 — parse XML, mirroring _TranscriptParser in the Python package:
+    //   unescape HTML entities, then strip any embedded HTML tags
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const els = doc.getElementsByTagName('text');
+    const data = [];
+
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
+      if (!el.textContent) continue;
+      const text = decodeHTMLEntities(el.textContent)
+        .replace(/<[^>]*>/g, '')  // strip HTML tags embedded in transcript text
+        .trim();
+      if (text) {
+        data.push({
+          start: parseFloat(el.getAttribute('start')),
+          duration: parseFloat(el.getAttribute('dur') || '0'),
+          text
+        });
+      }
+    }
+
+    return { success: true, data, error: null };
+
+  } catch (error) {
+    console.error("Error fetching transcript:", error);
+    return { success: false, data: null, error: error.message || "Error fetching transcript" };
+  }
+}
+
 // used in copy transcript button
 async function copyTranscript(youtubeUrl) {
   try {
-    const response = await fetch(youtubeUrl);
-    const text = await response.text();
-
-    const match = text.match(/"captionTracks":(.+?)]/);
-    if (!match) return "Transcript not available";
-
-    const captionTracks = JSON.parse(match[1] + "]");
-
-    // Check if captions exist
-    if (!captionTracks || captionTracks.length === 0) {
-      return "No transcript available for this video";
+    // Get transcript data as JSON
+    const result = await getYoutubeTranscript(youtubeUrl);
+    
+    if (!result.success || !result.data) {
+      return result.error || "Transcript not available";
     }
 
-    const baseUrl = captionTracks[0].baseUrl.replace(/\\u0026/g, "&");
-    const transcriptResponse = await fetch(baseUrl);
-    const transcriptText = await transcriptResponse.text();
-
-    // Parse the transcript XML
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(transcriptText, "text/xml");
-    const textElements = xmlDoc.getElementsByTagName("text");
-
+    // Format transcript with timestamps
     let transcript = "";
-    for (let i = 0; i < textElements.length; i++) {
-      // Add timestamp and text content
-      const start = parseFloat(textElements[i].getAttribute("start")).toFixed(
-        2
-      );
-      transcript += `[${convertSecondsToHMS(start)}] ${textElements[i].textContent}\n`;
+    for (const segment of result.data) {
+      transcript += `[${convertSecondsToHMS(segment.start)}] ${segment.text}\n`;
     }
 
     return transcript.trim();
@@ -1259,29 +1583,20 @@ async function receiveTokenLimit() {
 async function fetchTranscript(youtubeUrl) {
   const { tokens, charPerToken } = await receiveTokenLimit();
 
-  // Step 1: Try to scrape the transcript from YouTube
   try {
-    const response = await fetch(youtubeUrl);
-    const text = await response.text();
-
-    // Match "captionTracks" from the YouTube page source
-    const match = text.match(/"captionTracks":(.+?)]/);
-    if (!match) {
-      throw new Error("Caption tracks not found");
+    // Get transcript data as JSON using the generic function
+    const result = await getYoutubeTranscript(youtubeUrl);
+    
+    // If transcript is not available, fail immediately
+    if (!result.success || !result.data) {
+      console.error("Transcript not available:", result.error);
+      return { 
+        transcript: result.error || "Transcript not available", 
+        lastTagTime: -1 
+      };
     }
 
-    // Extract captions
-    const captionTracks = JSON.parse(match[1] + "]");
-    const baseUrl = captionTracks[0].baseUrl.replace(/\\u0026/g, "&");
-
-    // Fetch transcript data from captions URL
-    const transcriptResponse = await fetch(baseUrl);
-    const transcriptText = await transcriptResponse.text();
-
-    // Parse the XML to get <text> tags
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(transcriptText, "text/xml");
-    const textElements = xmlDoc.getElementsByTagName("text");
+    const transcriptSegments = result.data;
 
     let fullTranscript = ""; // Full transcript text
     let slicedTranscript = ""; // Transcript up to token limit
@@ -1289,10 +1604,10 @@ async function fetchTranscript(youtubeUrl) {
     let lastTagTime = -1; // Default to -1 (no slicing occurs)
     let isSliced = false; // Flag to check if slicing occurs
 
-    // Loop over <text> elements
-    for (let i = 0; i < textElements.length; i++) {
-      const textElement = textElements[i];
-      const tagContent = textElement.textContent.trim();
+    // Loop over transcript segments
+    for (let i = 0; i < transcriptSegments.length; i++) {
+      const segment = transcriptSegments[i];
+      const tagContent = segment.text;
       const charCount = tagContent.length;
 
       // Calculate tokens for this segment
@@ -1301,9 +1616,7 @@ async function fetchTranscript(youtubeUrl) {
       if (currentTokenCount + tokensInSegment <= tokens) {
         currentTokenCount += tokensInSegment; // Increment token count
         slicedTranscript += tagContent + " "; // Append to sliced transcript
-        lastTagTime =
-          parseFloat(textElement.getAttribute("start")) +
-          parseFloat(textElement.getAttribute("dur"));
+        lastTagTime = segment.start + segment.duration;
       } else {
         isSliced = true; // Slicing occurred
         break; // Stop processing further
@@ -1320,61 +1633,11 @@ async function fetchTranscript(youtubeUrl) {
       return { transcript: fullTranscript.trim(), lastTagTime: -1 };
     }
   } catch (error) {
-    console.log("Transcript scraping failed:", error);
-
-    // Step 2: Check video duration
-    const durationElement = document.querySelector(".ytp-time-duration");
-    if (!durationElement || !durationElement.innerText) {
-      return { transcript: "Unable to retrieve transcript", lastTagTime: -1 };
-    }
-
-    // Parse duration (format: "HH:MM:SS" or "MM:SS")
-    const durationText = durationElement.innerText;
-    const timeParts = durationText.split(":").map(Number);
-    let totalSeconds = 0;
-
-    if (timeParts.length === 3) {
-      // Format: HH:MM:SS
-      totalSeconds = timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2];
-    } else if (timeParts.length === 2) {
-      // Format: MM:SS
-      totalSeconds = timeParts[0] * 60 + timeParts[1];
-    } else {
-      return { transcript: "Invalid duration format", lastTagTime: -1 };
-    }
-
-    // Determine time slice: 300 seconds (5 minutes) if duration > 5 minutes, else -1
-    const timeSlice = totalSeconds > 300 ? 300 : -1;
-
-    // Step 3: Call backend API to transcribe
-    try {
-      const apiResponse = await fetch(`${API_URL}/api/textutils/transcribe/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          youtube_url: youtubeUrl,
-          duration: timeSlice,
-        }),
-      });
-
-      if (!apiResponse.ok) {
-        throw new Error("Unable to transcribe the video");
-      }
-
-      const apiData = await apiResponse.json();
-      const transcriptText = apiData.transcription || "No transcription available";
-
-      // For API transcriptions, use timeSlice as lastTagTime if applicable
-      return {
-        transcript: transcriptText.trim(),
-        lastTagTime: timeSlice > 0 ? timeSlice : -1,
-      };
-    } catch (apiError) {
-      console.error("Transcription API error:", apiError);
-      return { transcript: "Failed to transcribe video", lastTagTime: -1 };
-    }
+    console.error("Error fetching transcript:", error);
+    return { 
+      transcript: "Failed to fetch transcript", 
+      lastTagTime: -1 
+    };
   }
 }
 
@@ -1426,20 +1689,33 @@ async function getSummary() {
 
   // Calculate remaining calls (5 to 0)
   const remainingCalls = 5 - apiCallData.count;
+  
+  // Update status bar with remaining limit
+  updateSummaryStatusBar(remainingCalls, "Analyzing video...", true);
 
   if (
     savedSummary && savedSummary.length > 0 &&
     savedKeypoints && savedKeypoints.length > 0
   ) {
-    summaryResult.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatSummaryToHTML(savedSummary[0]?.text);
-    summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatKeypoints(savedKeypoints[0]?.text);
+    // Check if summary contains context time info
+    const summaryText = savedSummary[0]?.text || "";
+    const timeMatch = summaryText.match(/upto\s+([\d.]+)\s*minutes/i);
+    if (timeMatch) {
+      updateSummaryStatusBar(remainingCalls, `Context up to ${timeMatch[1]} min`, false);
+    } else {
+      updateSummaryStatusBar(remainingCalls, "Full video context", false);
+    }
+    
+    summaryResult.innerHTML = formatSummaryToHTML(savedSummary[0]?.text);
+    summaryKeypoints.innerHTML = formatKeypoints(savedKeypoints[0]?.text);
     document.getElementById("clipinsights__summary").style.display = "block";
     document.getElementById("clipinsights__keypoints").style.display = "block";
     return;
   }
   
   if (apiCallData.count >= 5) {
-    summaryResult.innerText = `Daily Limit Remaining: ${remainingCalls} ⚡\nYour summary limit has been reached.`;
+    updateSummaryStatusBar(remainingCalls, "Limit reached", false, true);
+    summaryResult.innerText = "Your summary limit has been reached. Please try again tomorrow.";
     summaryBtn.disabled = false;
     const summaryBtnSpan = summaryBtn.querySelector("span");
     summaryBtnSpan.textContent = "Summary";
@@ -1462,6 +1738,7 @@ async function getSummary() {
     !transcriptionData.transcript ||
     transcriptionData.transcript === "Transcript not available"
   ) {
+    updateSummaryStatusBar(5 - apiCallData.count, "No transcript available", false, true);
     summaryResult.innerText = "We're sorry, we were unable to summarize this video because the transcription is unavailable";
     summaryBtn.disabled = false;
     summaryBtnSpan.textContent = "Summary";
@@ -1491,29 +1768,38 @@ async function getSummary() {
           const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
           finalSummary += `...upto ${sliceTimeInMinutes} minutes`;
           finalKeypoints = parseList(finalKeypoints);
-          finalKeypoints.push(`Key points are up to ${sliceTimeInMinutes} minutes`);
         }
 
         notesDatabase.saveSummary(finalSummary, youtubeUrl);
         notesDatabase.saveKeypoints(finalKeypoints, youtubeUrl);
 
-        // Display updated remaining calls after increment
+        // Update status bar with context info and remaining limit
         const updatedRemainingCalls = 5 - apiCallData.count;
-        summaryResult.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatSummaryToHTML(finalSummary);
-        summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatKeypoints(finalKeypoints);
+        if (transcriptionData.lastTagTime !== -1) {
+          const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
+          updateSummaryStatusBar(updatedRemainingCalls, `Context up to ${sliceTimeInMinutes} min`, false);
+        } else {
+          updateSummaryStatusBar(updatedRemainingCalls, "Full video context", false);
+        }
+        
+        summaryResult.innerHTML = formatSummaryToHTML(finalSummary);
+        summaryKeypoints.innerHTML = formatKeypoints(finalKeypoints);
         document.getElementById("clipinsights__summary").style.display = "block";
         document.getElementById("clipinsights__keypoints").style.display = "block";
       } else if (data.success === false) {
+        updateSummaryStatusBar(5 - apiCallData.count, "Error", false, true);
         summaryResult.innerText = data.message;
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
+      updateSummaryStatusBar(5 - apiCallData.count, "Error", false, true);
       summaryResult.innerText = "An error occurred while fetching the summary.";
     } finally {
       summaryBtn.disabled = false;
       summaryBtnSpan.textContent = "Summary";
     }
   } else {
+    updateSummaryStatusBar(remainingCalls, "Not a YouTube video", false, true);
     summaryResult.innerText = "This might not be a YouTube video page. Try on a YouTube video page.";
     summaryBtn.disabled = false;
     summaryBtnSpan.textContent = "Summary";
@@ -1544,14 +1830,39 @@ async function getKeypoints() {
   }
   
   const remainingCalls = 5 - apiCallData.count;
+  
+  // Update status bar with remaining limit
+  updateKeypointsStatusBar(remainingCalls, "Analyzing video...", true);
 
   // Check if summary and keypoints exist in the database
   const savedSummary = await notesDatabase.getSummary(youtubeUrl);
   const savedKeypoints = await notesDatabase.getKeypoints(youtubeUrl);
 
   if (savedKeypoints && savedKeypoints.length > 0 && savedSummary && savedSummary.length > 0) {
-    summaryResult.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatSummaryToHTML(savedSummary[0]?.text);
-    summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${remainingCalls} ⚡</p><br>` + formatKeypoints(savedKeypoints[0]?.text);
+    // Check if keypoints contain context time info
+    const keypointsData = savedKeypoints[0]?.text;
+    let hasTimeContext = false;
+    let timeValue = null;
+    
+    if (Array.isArray(keypointsData)) {
+      const timeItem = keypointsData.find(item => item && item.includes && item.includes("up to"));
+      if (timeItem) {
+        const match = timeItem.match(/([\d.]+)\s*minutes/i);
+        if (match) {
+          hasTimeContext = true;
+          timeValue = match[1];
+        }
+      }
+    }
+    
+    if (hasTimeContext && timeValue) {
+      updateKeypointsStatusBar(remainingCalls, `Context up to ${timeValue} min`, false);
+    } else {
+      updateKeypointsStatusBar(remainingCalls, "Full video context", false);
+    }
+    
+    summaryResult.innerHTML = formatSummaryToHTML(savedSummary[0]?.text);
+    summaryKeypoints.innerHTML = formatKeypoints(savedKeypoints[0]?.text);
     document.getElementById("clipinsights__summary").style.display = "block";
     document.getElementById("clipinsights__keypoints").style.display = "block";
     return;
@@ -1573,6 +1884,7 @@ async function getKeypoints() {
     !transcriptionData.transcript ||
     transcriptionData.transcript === "Transcript not available"
   ) {
+    updateKeypointsStatusBar(remainingCalls, "No transcript available", false, true);
     summaryKeypoints.innerText = "We're sorry, we were unable to get key points for this video because the transcription is unavailable";
     keypointsBtn.disabled = false;
     keypointsBtnSpan.textContent = "Key points";
@@ -1583,7 +1895,8 @@ async function getKeypoints() {
   if (youtubeUrl.includes("youtube.com/watch")) {
     // Check API call limit
     if (apiCallData.count >= 5) {
-      summaryKeypoints.innerText = `Daily Limit Remaining: ${remainingCalls} ⚡\nYour key points limit has been reached.`;
+      updateKeypointsStatusBar(remainingCalls, "Limit reached", false, true);
+      summaryKeypoints.innerText = "Your key points limit has been reached. Please try again tomorrow.";
       keypointsBtn.disabled = false;
       keypointsBtnSpan.textContent = "Key points";
       return;
@@ -1620,23 +1933,32 @@ async function getKeypoints() {
           const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
           finalSummary += `...upto ${sliceTimeInMinutes} minutes`;
           finalKeypoints = parseList(finalKeypoints);
-          finalKeypoints.push(`Key points are up to ${sliceTimeInMinutes} minutes`);
         }
 
         // Save the generated summary and keypoints to the database
         notesDatabase.saveSummary(finalSummary, youtubeUrl);
         notesDatabase.saveKeypoints(finalKeypoints, youtubeUrl);
 
+        // Update status bar with context info and remaining limit
+        if (transcriptionData.lastTagTime !== -1) {
+          const sliceTimeInMinutes = (transcriptionData.lastTagTime / 60).toFixed(2);
+          updateKeypointsStatusBar(updatedRemainingCalls, `Context up to ${sliceTimeInMinutes} min`, false);
+        } else {
+          updateKeypointsStatusBar(updatedRemainingCalls, "Full video context", false);
+        }
+
         // Display the summary and keypoints
-        summaryResult.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatSummaryToHTML(finalSummary);
-        summaryKeypoints.innerHTML = `<p>Daily Limit Remaining: ${updatedRemainingCalls} ⚡</p>` + formatKeypoints(finalKeypoints);
+        summaryResult.innerHTML = formatSummaryToHTML(finalSummary);
+        summaryKeypoints.innerHTML = formatKeypoints(finalKeypoints);
         document.getElementById("clipinsights__summary").style.display = "block";
         document.getElementById("clipinsights__keypoints").style.display = "block";
       } else if (data.success === false) {
+        updateKeypointsStatusBar(updatedRemainingCalls, "Error", false, true);
         summaryKeypoints.innerText = data.message;
       }
     } catch (error) {
       console.error("Error generating Key Points:", error);
+      updateKeypointsStatusBar(5 - apiCallData.count, "Error", false, true);
       summaryKeypoints.innerText = "An error occurred while generating key points.";
     } finally {
       // Restore button state after request completion
@@ -1644,6 +1966,7 @@ async function getKeypoints() {
       keypointsBtnSpan.textContent = "Key points";
     }
   } else {
+    updateKeypointsStatusBar(remainingCalls, "Not a YouTube video", false, true);
     summaryKeypoints.innerText = "This might not be a YouTube video page. Try on a YouTube video page.";
     // Restore button state if not a YouTube video
     keypointsBtn.disabled = false;
@@ -2121,8 +2444,81 @@ async function logout() {
 }
 
 // Chat functions
-let sliceMessageDisplayed = false; // Track if slice time message has been shown
 let lastProcessedUrl = ""; // Store the last processed URL
+
+// Helper function to update the limit badge in the chat status bar
+function updateLimitBadge(remaining) {
+  const limitBadge = document.getElementById("clipinsights__limitBadge");
+  const limitCount = document.getElementById("clipinsights__limitCount");
+  
+  if (limitBadge && limitCount) {
+    limitCount.textContent = remaining;
+    
+    // Update badge color based on remaining count
+    limitBadge.classList.remove("warning", "depleted");
+    if (remaining <= 0) {
+      limitBadge.classList.add("depleted");
+    } else if (remaining <= 3) {
+      limitBadge.classList.add("warning");
+    }
+  }
+}
+
+// Helper function to update Summary status bar
+function updateSummaryStatusBar(remaining, contextText = null, isLoading = false, isError = false) {
+  const limitBadge = document.getElementById("clipinsights__summaryLimitBadge");
+  const limitCount = document.getElementById("clipinsights__summaryLimitCount");
+  const contextTextEl = document.getElementById("clipinsights__summaryContextText");
+  const contextIcon = document.querySelector("#clipinsights__summaryStatusBar .clipinsights__contextIcon");
+  
+  if (limitBadge && limitCount) {
+    limitCount.textContent = remaining;
+    limitBadge.classList.remove("warning", "depleted");
+    if (remaining <= 0) {
+      limitBadge.classList.add("depleted");
+    } else if (remaining <= 2) {
+      limitBadge.classList.add("warning");
+    }
+  }
+  
+  if (contextTextEl) {
+    if (contextText) contextTextEl.textContent = contextText;
+    contextTextEl.classList.toggle("loading", isLoading);
+    contextTextEl.classList.toggle("error", isError);
+  }
+  
+  if (contextIcon) {
+    contextIcon.classList.toggle("loading", isLoading);
+  }
+}
+
+// Helper function to update Keypoints status bar
+function updateKeypointsStatusBar(remaining, contextText = null, isLoading = false, isError = false) {
+  const limitBadge = document.getElementById("clipinsights__keypointsLimitBadge");
+  const limitCount = document.getElementById("clipinsights__keypointsLimitCount");
+  const contextTextEl = document.getElementById("clipinsights__keypointsContextText");
+  const contextIcon = document.querySelector("#clipinsights__keypointsStatusBar .clipinsights__contextIcon");
+  
+  if (limitBadge && limitCount) {
+    limitCount.textContent = remaining;
+    limitBadge.classList.remove("warning", "depleted");
+    if (remaining <= 0) {
+      limitBadge.classList.add("depleted");
+    } else if (remaining <= 2) {
+      limitBadge.classList.add("warning");
+    }
+  }
+  
+  if (contextTextEl) {
+    if (contextText) contextTextEl.textContent = contextText;
+    contextTextEl.classList.toggle("loading", isLoading);
+    contextTextEl.classList.toggle("error", isError);
+  }
+  
+  if (contextIcon) {
+    contextIcon.classList.toggle("loading", isLoading);
+  }
+}
 
 // Add this function to manage chat history
 function getChatHistory() {
@@ -2187,31 +2583,25 @@ async function sendMessage() {
 
   if (youtubeUrl && youtubeUrl.includes("youtube.com/watch")) {
     try {
-      // Reset sliceMessageDisplayed if URL changes
-      if (youtubeUrl !== lastProcessedUrl) {
-        sliceMessageDisplayed = false;
-        lastProcessedUrl = youtubeUrl;
-      }
+      // Track URL changes for context updates
+      lastProcessedUrl = youtubeUrl;
 
       const transcription = await fetchTranscript(youtubeUrl);
 
-      // Handle slice time message display
-      if (!sliceMessageDisplayed && transcription.lastTagTime !== -1) {
-        const sliceTimeInMinutes = (transcription.lastTagTime / 60).toFixed(2);
-        const sliceMessage = `Video chatting is available for up to ${sliceTimeInMinutes} minutes.`;
-        const sliceMessageElement = document.createElement("div");
-        sliceMessageElement.classList.add(
-          "clipinsights__message",
-          "clipinsights__bot"
-        );
-        sliceMessageElement.textContent = sliceMessage;
-        clipinsights__chatMessages.insertBefore(
-          sliceMessageElement,
-          clipinsights__chatMessages.firstChild
-        );
-        sliceMessageDisplayed = true;
-        clipinsights__chatMessages.scrollTop = clipinsights__chatMessages.scrollHeight;
+      // Update status bar with context time info
+      const contextTimeElement = document.getElementById("clipinsights__contextTime");
+      if (contextTimeElement) {
+        if (transcription.lastTagTime !== -1) {
+          const sliceTimeInMinutes = (transcription.lastTagTime / 60).toFixed(2);
+          contextTimeElement.textContent = `Context up to ${sliceTimeInMinutes} min`;
+        } else {
+          contextTimeElement.textContent = "Full video context";
+        }
       }
+
+      // Update limit badge
+      const remaining = 10 - chatLimitData.count;
+      updateLimitBadge(remaining);
 
       // Prepare data payload with chat history if enabled
       const data = {
@@ -2252,9 +2642,9 @@ async function sendMessage() {
         const { done, value } = await reader.read();
         if (done) {
           if (isSuccess) {
-            // Append remaining limit to the message
+            // Update limit badge (don't append to message)
             const remaining = 10 - chatLimitData.count;
-            botMessageElement.textContent += `\n\nDaily Limit Remaining: ${remaining} ⚡`;
+            updateLimitBadge(remaining);
             clipinsights__chatMessages.scrollTop = clipinsights__chatMessages.scrollHeight;
           }
           break;

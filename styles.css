@@ -102,6 +102,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 2;
 }
 
 #clipinsights__mainHeading {
@@ -140,8 +142,10 @@
 .clipinsights__button-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   gap: 5px;
+  position: relative;
+  z-index: 1;
 }
 /* 
 #clipinsights__summaryBtn,
@@ -320,7 +324,7 @@
 
 #clipinsights__screenshotNoteContainer {
   margin-top: 15px;
-  height: 312px;
+  height: 252px;
   overflow-y: auto;
   background-color: white;
   padding: 10px;
@@ -606,6 +610,18 @@
   gap: 5px;
 }
 
+/* Bottom buttons tooltips appear at the top */
+#clipinsights__loginBtnContainer .clipinsights__btnTooltip {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+#clipinsights__loginBtnContainer .clipinsights__btnTooltip::before {
+  bottom: auto;
+  top: 100%;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
 #clipinsights__loginContainer h4{
   margin-bottom: 12px;
 }
@@ -660,16 +676,179 @@
   color: #26283b;
 }
 
+/* Shared Status Bar - Minimal Info Banner (Chat, Summary, Keypoints) */
+.clipinsights__statusBar,
+#clipinsights__chatStatusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8f9fb;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.clipinsights__contextInfo,
+#clipinsights__contextInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+}
+
+.clipinsights__contextInfo svg,
+#clipinsights__contextInfo svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.clipinsights__contextText,
+#clipinsights__contextTime {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.clipinsights__limitBadge,
+#clipinsights__limitBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background-color: #f0fdf4;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #16a34a;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: default;
+}
+
+.clipinsights__limitBadge.warning,
+#clipinsights__limitBadge.warning {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+.clipinsights__limitBadge.depleted,
+#clipinsights__limitBadge.depleted {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.clipinsights__limitBadge svg,
+#clipinsights__limitBadge svg {
+  flex-shrink: 0;
+}
+
+/* Limit Badge Tooltip (shared) */
+.clipinsights__limitTooltip,
+#clipinsights__limitTooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background-color: #1f2937;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  padding: 5px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.clipinsights__limitTooltip::after,
+#clipinsights__limitTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+.clipinsights__limitBadge:hover .clipinsights__limitTooltip,
+#clipinsights__limitBadge:hover #clipinsights__limitTooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Context Loading Animation (shared) */
+.clipinsights__contextIcon.loading,
+#clipinsights__contextIcon.loading {
+  animation: clipinsights-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes clipinsights-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.clipinsights__contextText.loading,
+#clipinsights__contextTime.loading {
+  color: #9ca3af;
+}
+
+.clipinsights__contextText.error,
+#clipinsights__contextTime.error {
+  color: #d97706;
+}
+
+/* Button Tooltip (shared) */
+.clipinsights__button {
+  position: relative;
+}
+
+.clipinsights__btnTooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1f2937;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  padding: 5px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.clipinsights__btnTooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: transparent transparent #1f2937 transparent;
+}
+
+.clipinsights__button:hover .clipinsights__btnTooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Chat messages area */
 #clipinsights__chatMessages {
   flex: 1; /* Allows chat messages to take the remaining space */
   padding: 10px;
   overflow-y: auto;
   background-color: white;
-  border-top: 1px solid #ddd;
+  border-top: none;
   margin-bottom: 0;
   height: 100%;
-  height: 348px;
+  height: 292px;
 }
 
 /* Input area */
@@ -730,11 +909,13 @@
 
 /* Chat container styles */
 #clipinsights__chatContainer {
-  width: auto; /* Set a fixed width for the chat container */
+  width: 100%; /* Constrain to parent width */
+  max-width: 100%; /* Prevent overflow */
   background-color: white; /* Background color for the chat container */
   border-radius: 12px; /* Rounded corners */
   display: flex;
   flex-direction: column; /* Stack children vertically */
+  box-sizing: border-box; /* Include padding in width calculation */
    /* Allow the container to take full height of its parent */
 }
 
@@ -781,29 +962,60 @@
 #clipinsights__uploadBtn.loading:before {
   content: "Uploading...";
 }
-.clipinsights__delete-btn {
+/* Note action buttons container */
+.clipinsights__note-actions {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgba(255, 255, 255, 0.8);
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+.clipinsights__screenshot-note:hover .clipinsights__note-actions {
+  opacity: 1;
+}
+
+/* Minimal delete button */
+.clipinsights__delete-btn {
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
   text-align: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
+  font-weight: 400;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  color: #666;
+  transition: all 0.15s ease;
+  position: relative;
 }
 
 .clipinsights__delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* Action button tooltips (delete/edit) */
+.clipinsights__delete-btn .clipinsights__btnTooltip,
+.clipinsights__update-btn .clipinsights__btnTooltip {
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.clipinsights__delete-btn:hover .clipinsights__btnTooltip,
+.clipinsights__update-btn:hover .clipinsights__btnTooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .clipinsights__screenshot-note {
@@ -812,77 +1024,33 @@
 
 .clipinsights__note {
   position: relative;
-  padding-right: 25px; /* Make room for delete button */
-  /* ... existing styles ... */
+  padding-right: 40px;
 }
 
-.clipinsights__screenshot-note {
-  position: relative;
-  /* ... existing styles ... */
-}
-
-.clipinsights__delete-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
-  text-align: center;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  transition: all 0.2s ease;
-}
-
-.clipinsights__delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
-}
-
-/* Specific styling for note delete button */
-.clipinsights_note .clipinsights_delete-btn {
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(240, 240, 240, 0.8);
-}
-
-.clipinsights_note .clipinsights_delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
-}
-
+/* Minimal update/edit button */
 .clipinsights__update-btn {
-  position: absolute;
-  top: 5px;
-  right: 35px; 
-  background-color: rgba(255, 255, 255, 0.8);
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
   text-align: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 11px;
+  font-weight: 400;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
-  transition: all 0.2s ease;
+  color: #666;
+  transition: all 0.15s ease;
+  position: relative;
 }
 
 .clipinsights__update-btn:hover {
-  background-color: rgba(0, 123, 255, 0.8); 
-  color: white;
+  background-color: #dbeafe;
+  color: #2563eb;
 }
 
 .clipinsights__update-box {
@@ -901,18 +1069,18 @@
   font-family: Arial, sans-serif;
   color: #333;
   flex-grow: 1;
-  padding: 12px;
-  border: 2px solid #dcdcdc;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   resize: none;
   max-height: 20em;
-  line-height: 1.5em;
-  background-color: #f9f9f9;
+  line-height: 1.4em;
+  background-color: #fafafa;
   box-sizing: border-box;
   overflow-y: auto;
-  width: 93%;
+  width: 100%;
 
   -webkit-appearance: none;
   scrollbar-width: none;
@@ -943,7 +1111,7 @@
   color: white;
   text-align: center;
   box-sizing: border-box;
-  z-index: 1000;
+  z-index: 2;
   border-radius: 8px;
   margin-bottom: 5px;
 }
