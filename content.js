@@ -1,8 +1,8 @@
 // content.js
 let notesDatabase = ""; // Store the notes database
 
-//const API_URL = 'https://app.clipinsights.com'
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = 'https://clipinsights-241407463290.europe-west1.run.app'
+// const API_URL = "http://127.0.0.1:8000";
 
 const ENCRYPTION_KEY = "my-strong-encryption-key"; // Replace with a secret key (keep this secure)
 
