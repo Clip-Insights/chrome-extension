@@ -1,0 +1,315 @@
+# Clip Insights — Architecture
+
+> This document describes **(A)** how the current (vanilla HTML/CSS/JS) extension works today, feature by feature, and **(B)** the target **modular, platform-extensible** architecture the codebase is being migrated to (Vite + React + TypeScript). It is the single source of truth for behaviour during the migration — every feature listed in Part A must keep working identically after the rewrite.
+
+---
+
+## Part A — Current Extension (v3.0.0, vanilla JS)
+
+### A.0 High-level overview
+
+Clip Insights is a **Manifest V3 Chrome extension** that augments YouTube watch pages with a study/notes panel injected into the right-hand sidebar. It lets a learner capture video screenshots, write timestamped notes, generate AI summaries and key points, chat with an AI about the video, copy the transcript, and export everything to PDF (download or upload to the user's account).
+
+There is **no browser-action popup UI** in practice. Although a `popup.html`/`popup.js` exist, `manifest.json` declares only `default_icon` (no `default_popup`). The real UI is `popup.html`'s markup **fetched and injected into the YouTube page** by the content script. `popup.js` is **dead/legacy code** (it calls `chrome.tabs.*` APIs unavailable to injected page scripts and references element IDs that no longer exist); the live logic is entirely in `content.js`.
+
+### A.1 File map
+
+| File | Role |
+|---|---|
+| `manifest.json` | MV3 manifest. Declares content scripts, background SW, host permissions (`youtube.com`), web-accessible resources. |
+| `background.js` | Service worker. Captures screenshots and note-timestamps by injecting functions into the page via `chrome.scripting.executeScript`. Keeps an in-memory `screenshotNotes` array (largely vestigial). |
+| `content.js` | **The application** (~3000 lines). Injection, UI event wiring, notes, screenshots, summary, key points, chat, auth, transcript, PDF, limits, SPA-navigation handling. |
+| `database.js` | `YouTubeNotesDatabase` class — IndexedDB persistence layer. Exposed as `window.YouTubeNotesDatabase`. |
+| `popup.html` | The UI **template** (markup only) fetched and injected into the page. Also references `popup.js` (ignored when injected via `innerHTML`). |
+| `styles.css` | Content-script CSS (injected globally on YouTube; all selectors namespaced with `clipinsights__` / `clip-insights-`). |
+| `popup.js` | **Legacy/dead.** Superseded by `content.js`. |
+| `libs/jspdf.umd.min.js` | PDF generation (bundled + content-script + web-accessible). |
+| `libs/pdfobject.min.js` | PDF embedding helper (loaded, effectively unused). |
+| `icons/`, `*.png` | Extension icons and image assets. |
+
+### A.2 Manifest configuration
+
+- `manifest_version: 3`, `name: "Clip Insights"`, `version: "3.0.0"`.
+- `permissions: ["scripting"]`.
+- `host_permissions: ["https://www.youtube.com/*"]`.
+- `background.service_worker: "background.js"`.
+- `content_scripts`: matches `https://www.youtube.com/*`; injects (in order) `libs/jspdf.umd.min.js`, `libs/pdfobject.min.js`, `database.js`, `content.js`, and `styles.css`.
+- `web_accessible_resources`: `libs/*`, `popup.html`, and images — exposed to `youtube.com` so the content script can `fetch(chrome.runtime.getURL("popup.html"))`.
+- `action`: icon only (no popup). `options_ui.open_in_tab: true` (no options page actually provided).
+
+### A.3 Injection & SPA navigation lifecycle
+
+YouTube is a single-page app; the content script must (re)inject on every video navigation and remove itself when not on a watch page.
+
+- `watchYouTubeNavigation()` (entry point, called at script load):
+  - Waits for the sidebar element `#related.style-scope.ytd-watch-flexy` via `waitForElement(selector, maxAttempts=20, interval=500ms)`.
+  - Tracks `lastUrl`; on any change calls `injectClipInsightsNotepad()`.
+  - Detects navigation with **both** a `MutationObserver` on `document.body` (`childList + subtree`) **and** a 1s `setInterval` fallback.
+- `isYouTubeVideoPage()` → true when `location.pathname === "/watch"` and `?v=` present.
+- `injectClipInsightsNotepad()`:
+  1. If sidebar missing or not a watch page → remove any existing `#clip-insights-notepad` + styles, return.
+  2. Instantiate `new YouTubeNotesDatabase()` (stored in module-global `notesDatabase`).
+  3. Remove any previous panel (handles video→video navigation).
+  4. Run retention cleanup (`deleteOldRecords`, 5-day threshold — see A.11).
+  5. Create `<div id="clip-insights-notepad">`, `fetch(chrome.runtime.getURL("popup.html"))`, set as `innerHTML`, `prepend` into the sidebar.
+  6. Inject a `<style id="clip-insights-notepad-styles">` block (note: most styling actually comes from `styles.css`; this inline block is minimal/legacy).
+  7. Wire **all** event listeners (buttons, inputs, keyboard shortcuts), then `restoreScreenshotsAndNotes()`.
+
+### A.4 Identity / content key — `getYouTubeUrl()`
+
+All persisted records are keyed by a **normalized video URL**: `https://www.youtube.com/watch?v=<videoId>` (query string stripped to just `v`). This is the join key across every IndexedDB store and several `localStorage` counters. **In the new architecture this becomes the platform-agnostic `contentId`/`contentUrl`.**
+
+### A.5 IndexedDB persistence (`database.js`)
+
+- Database: `YouTubeNotesDatabase`, version `1`.
+- Object stores (all `keyPath: "id"`, `autoIncrement`, with a `byVideoUrl` index on `videoUrl`):
+  - **`textNotes`** — `{ id, text, videoTimestamp, videoUrl, createdAt }`
+  - **`screenshots`** — `{ id, url (jpeg dataURL), videoTimestamp, videoUrl, createdAt }`
+  - **`summaries`** — `{ id, text, videoUrl, createdAt }`
+  - **`keypoints`** — `{ id, text, videoUrl, createdAt }` (`text` is a stringified/array list)
+- Public methods:
+  - `initDatabase()` — opens DB, creates stores on `onupgradeneeded`.
+  - `saveTextNote(text, ts, url)`, `saveScreenshot(dataUrl, ts, url)`, `saveSummary(text, url)`, `saveKeypoints(text, url)`.
+  - `retrieveVideoNotes(url)` — merges text notes + screenshots, tags each with `type`, sorts by `videoTimestamp`. (Uses `IDBKeyRange.only([url])` on the index.)
+  - `getAllTextNotes(url)`, `getAllScreenshots(url)` — `getAll()` then JS-filter by `videoUrl` (defensive against index key shape).
+  - `getSummary(url)`, `getKeypoints(url)` — via `byVideoUrl` index `getAll(url)`; return arrays (callers use `[0]?.text`).
+  - `deleteTextNote(id)`, `deleteScreenshot(dataUrl, url)` (finds by matching `url`+`videoUrl`).
+  - `deleteAllVideoNotes(url)` — clears textNotes/screenshots/summaries/keypoints for that video in one transaction.
+  - `updateNote(id, partial)` — get → merge → put.
+  - `getTextNotesCount()`, `getScreenshotsCount()`.
+
+> **Migration constraint:** the new DB layer MUST keep the same database name, version/upgrade path, store names, key paths, indices, and record shapes so existing users' data survives the upgrade. The class is renamed/abstracted but the schema is preserved.
+
+### A.6 Screenshots
+
+- **Capture** (`takeScreenshot()` in content.js → message `takeScreenshot` → `background.js`):
+  - Per-video cap of **40** screenshots, tracked in `localStorage["<videoUrl>_screenshotCount"]`. At the cap, alert and abort.
+  - `background.js` runs `takeScreenshotAtCurrentTime` in the page via `chrome.scripting.executeScript`: finds `document.querySelector("video")`, reads `video.currentTime`, draws the current frame to a `<canvas>` sized to `videoWidth × videoHeight`, exports `canvas.toDataURL("image/jpeg", 0.5)`, returns `{ screenshotUrl, time, size(KB) }`.
+  - On success: `addScreenshotToPopup(url, time)` (renders immediately), `notesDatabase.saveScreenshot(...)`, increment count.
+- **Render** (`addScreenshotToPopup`): an `<img>` with a timestamp badge and a delete button; auto-scrolls to newest. Delete removes from IndexedDB (`deleteScreenshot`) + DOM and decrements the count.
+- **Why background-script capture?** Drawing a cross-origin `<video>` to canvas requires running in the page's context with the right privileges; the SW injects the capture function targeted at the sender tab.
+
+### A.7 Notes (text)
+
+- **Add** (`addNote()`): reads `#clipinsights__noteInput`; if empty → alert. Sends `addNote` message to `background.js` (`logNoteWithTime` returns the current `video.currentTime`); then `saveTextNote(text, time, url)` and `addNoteToPopup(text, time)`. Enter (without Shift) submits.
+- **Render** (`addNoteToPopup`): a note row with the text, an HMS timestamp, and Edit + Delete buttons; auto-scrolls to newest.
+- **Edit** (`enableNoteEditMode` → `updateNoteInDatabase`): inline `<textarea>`; Enter saves, Esc cancels, blur saves; updates the matching record (found by `videoTimestamp`) via `updateNote`. Brief "updated" highlight.
+- **Delete**: finds the record by `text`+`videoTimestamp`, `deleteTextNote(id)`, removes the row.
+
+### A.8 Timestamps & mappings
+
+- `convertSecondsToHMS(totalSeconds)` formats `video.currentTime` into `HH:MM:SS` / `MM:SS` / `SS` (hours/minutes shown only when non-zero). Used for badges and PDF.
+- **Mapping model:** every note and screenshot stores `videoTimestamp` (float seconds). The merged, timestamp-sorted view (`restoreScreenshotsAndNotes` for UI; `retrieveVideoNotes`/the PDF builder for export) is what produces the chronological "notes + screenshots interleaved by time" experience. In the PDF, timestamps are clickable deep-links `…&t=<sec>s`.
+- `restoreScreenshotsAndNotes()` (on inject): loads all screenshots + text notes for the current video, merges, sorts by `videoTimestamp`, and re-renders them in order.
+
+### A.9 Transcript
+
+- `getYoutubeTranscript(youtubeUrl)` — fetches the transcript **without** the official captions UI, mirroring `youtube-transcript-api`:
+  1. GET the watch page, extract `INNERTUBE_API_KEY` (regex; falls back to a known public key).
+  2. POST `youtubei/v1/player` with the **ANDROID** client context (avoids the WEB client's PO-token requirement).
+  3. Read `captions.playerCaptionsTracklistRenderer.captionTracks`; pick **manual English → auto English → first**.
+  4. Clean `baseUrl` (strip `&fmt=srv3`; if `&exp=xpe` present → requires PoToken → error), GET the XML.
+  5. Parse `<text>` nodes → `{ start, duration, text }[]`, decoding HTML entities and stripping inline tags.
+  - Returns `{ success, data, error }`.
+- `copyTranscript(url)` → formats segments as `[HMS] text\n…`. `handleCopyTranscript()` wires the **Transcript** button: copies to clipboard with loading/restored/failed button states.
+- `receiveTokenLimit()` → `GET /api/textutils/tokenlimit/` returns `{ tokens, charPerToken }`.
+- `fetchTranscript(url)` — **token-budget slicing**: walks segments accumulating `ceil(chars/charPerToken)` until the `tokens` budget is hit; returns `{ transcript, lastTagTime }` where `lastTagTime` is the timestamp the context was sliced at (`-1` if the whole transcript fits). This bounds how much of long videos is sent to the AI and drives the "Context up to X min" UI labels.
+
+### A.10 AI features — Summary, Key Points, Chat
+
+All call the Django backend at `API_URL` (`https://clipinsights-241407463290.europe-west1.run.app`; local `http://127.0.0.1:8000` commented out).
+
+- **Summary** (`showSummary`/`getSummary`, button `#clipinsights__summaryBtn`, shortcut Ctrl+Shift+Y; hide Ctrl+Shift+H):
+  - If a saved summary+keypoints exist for the video → render from IndexedDB (no API call).
+  - Else `fetchTranscript` → `POST /api/textutils/summary/ { youtube_url, transcription }` → `{ success, summary, keypoints }`. On success: append "…upto X minutes" when sliced, save both to IndexedDB, render. `formatSummaryToHTML` converts `**bold**`, newlines, and `- ` bullets to HTML.
+- **Key Points** (`showKeyPoints`/`getKeypoints`, button `#clipinsights__keypointsBtn`, shortcut Ctrl+Shift+K; hide Ctrl+Shift+L): **same backend call** as Summary (the `/summary/` endpoint returns both); separate function exists only to manage the Key Points button/UI state. `parseList` + `formatKeypoints` normalize the Python-list-ish string the backend returns into `<ul><li>…`.
+- **Chat** (`sendMessage`, button `#clipinsights__sendChatBtn` / `#clipinsights__chatBtn` to open):
+  - Opening the chat proactively calls `fetchTranscript` to show the context window label and the remaining-limit badge.
+  - `POST /api/textutils/chat/` with `{ youtube_url, query, transcription, stream: true, chat_memory_enabled, chat_history }`. Response is **SSE-style streamed** (`data: <token>` lines; `[DONE]` terminates; `Error:` prefixes errors). Tokens are appended live to the bot message element.
+  - **Chat memory:** `CHAT_MEMORY_ENABLED = true`, `CHAT_MEMORY_WINDOW_SIZE = 4`. `getChatHistory()` reads the last N DOM messages as `{role, content}` and sends them for context.
+
+### A.11 Limits (rate limiting / quotas)
+
+Several independent client-side limits, all in `localStorage`, all with a rolling 24h reset (except the per-video screenshot cap):
+
+| Limit | Key | Max | Reset | Notes |
+|---|---|---|---|---|
+| Screenshots / video | `"<videoUrl>_screenshotCount"` | 40 | per-video (cleared on Clear / retention) | hard cap on capture |
+| Summary + Key Points / day | `"yt-player-bandwidth-performance"` | 5 | 24h rolling | shared counter; drives status-bar badge |
+| Chat / day | `"yt-chat-limit"` | 10 | 24h rolling | drives chat limit badge |
+| Generic daily limit | `"clipinsights_daily_limit"` | 5 | 24h rolling | parallel/partly-legacy `updateLimitUI`/`updateButtonStates`/`decrementDailyLimit` system |
+
+- Badge/status helpers: `updateLimitBadge`, `updateSummaryStatusBar`, `updateKeypointsStatusBar`, `updateLimitUI`, `updateButtonStates` (colour states: normal/warning/depleted). A 5s `setInterval` refreshes `updateLimitUI`.
+- **Retention cleanup** (`deleteOldRecords(thresholdMillis, now)`): on every inject, cursors through all four stores and deletes records whose `createdAt` is older than **5 days**.
+
+### A.12 Authentication
+
+- Backend (Django REST): `POST /api/account/login/` → `{ token: { access, refresh } }`; `POST /api/account/refresh-token/` → `{ access }`.
+- **Token storage is encrypted at rest in `localStorage`:** `getKey()` derives an AES-GCM-256 key via PBKDF2 (100k iterations, SHA-256) from a hardcoded `ENCRYPTION_KEY` + fixed salt. `encrypt`/`decrypt` (AES-GCM, random 12-byte IV prepended, base64). `storeToken`/`getToken` wrap these under keys `"access"` / `"refresh"`.
+  - ⚠️ **Security note:** the encryption key and salt are hardcoded in the client — this is light obfuscation, not real secrecy. Flagged for the rewrite (do not regress, but document; consider `chrome.storage` + a clearer threat model).
+- `authenticate()` — reads email/password inputs, posts login (`credentials: "include"`), stores tokens, swaps login view → main view.
+- `isTokenExpired(jwt)` — decodes the JWT payload, compares `exp`. `refreshAccessToken()` — uses refresh token to mint a new access token. `checkAuthenticationStatus()` → `"logged-in" | "logged-out"` (auto-refreshes access when expired; logs out if refresh expired). `logout()` removes both tokens.
+- The header **Login/Logout** button (`#clipinsights__loginBtn`) toggles label/behaviour based on `checkAuthenticationStatus()`.
+
+### A.13 Export — Download PDF & Upload
+
+- `generatePDF()` (jsPDF) builds a styled document:
+  - Header with the Clip Insights logo (SVG→PNG at 4× via canvas) linking to the Chrome Web Store; the video title links to the video.
+  - **Key Points** section (parsed list, numbered, left-rule styling).
+  - **Screenshots & Notes** interleaved in `videoTimestamp` order; each item gets a clickable timestamp badge deep-linking to `…&t=<sec>s`; screenshots embedded as JPEG with borders; manual pagination with per-page footer (small logo, generation date, page number).
+  - **Video Summary** section last (cleaned whitespace, paginated).
+  - Returns `{ pdfBlob, fileName }` where `fileName = "<cleaned video title>.pdf"` (`cleanYouTubeTitle` strips leading `(n)` and trailing `- YouTube`).
+- **Download** (`saveAsPDF`, button `#clipinsights__saveBtn`, shortcut Ctrl+Shift+P): object-URL + temporary `<a download>`; button shows "Saving…".
+- **Upload** (`uploadPDF`, button `#clipinsights__uploadBtn`, shortcut Ctrl+Shift+U): requires a valid access token (else alert "Please login"); `POST /api/userspace/files/` as `multipart/form-data` with `Authorization: Bearer <access>`; button shows "Uploading…".
+
+### A.14 Clear all (`clearAllScreenshotsAndNotes`, button `#clipinsights__clearBtn`, shortcut Ctrl+Shift+C)
+
+Removes rendered notes/screenshots (preserving any `clipinsights__userlimit` element), clears summary/keypoints/chat panels, removes the per-video screenshot count and summary/keypoints `localStorage`, and `deleteAllVideoNotes(videoUrl)` from IndexedDB.
+
+### A.15 Keyboard shortcuts (all `Ctrl+Shift+…`)
+
+`S` screenshot · `Y` show summary · `H` hide summary · `K` show key points · `L` hide key points · `C` clear all · `T` copy transcript · `P` save PDF · `U` upload PDF.
+
+### A.16 Backend API surface (consumed by the extension)
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/account/login/` | Login → access/refresh JWTs |
+| POST | `/api/account/refresh-token/` | Refresh access JWT |
+| GET | `/api/textutils/tokenlimit/` | `{ tokens, charPerToken }` for transcript slicing |
+| POST | `/api/textutils/summary/` | `{ summary, keypoints }` from transcript |
+| POST | `/api/textutils/chat/` | Streamed AI chat (SSE) |
+| POST | `/api/userspace/files/` | Upload generated PDF (auth required) |
+
+(Backend also exposes `/api/textutils/transcribe/`, not currently used by the client.)
+
+### A.17 Known issues / tech debt (to address or preserve-and-flag during migration)
+
+- `content.js` is a ~3000-line god-module mixing platform glue, persistence, networking, crypto, UI, and PDF.
+- Summary and Key Points duplicate an entire request flow for UI reasons (DRY violation).
+- `popup.js` is dead code; `pdfobject.min.js` is loaded but unused.
+- Hardcoded `ENCRYPTION_KEY`/salt; `API_URL` hardcoded (no env separation).
+- Inline `<style>` block in `injectClipInsightsNotepad` overlaps `styles.css`.
+- Several "don't needed" `localStorage` helpers remain (`saveNoteToLocalStorage`, etc.).
+- Four overlapping limit systems.
+
+---
+
+## Part B — Target Architecture (Vite + React + TypeScript, platform-extensible)
+
+### B.1 Goals
+
+1. **No functional regression** — every behaviour in Part A works identically; existing users' IndexedDB data is preserved (same DB name/version/stores/shapes).
+2. **Modular & platform-extensible** — the YouTube-specific logic (where to inject, how to find the `<video>`, how to read the content URL/title, how to fetch the transcript, how to detect navigation) is isolated behind a **`PlatformAdapter` interface**. Adding Coursera / DeepLearning.AI later = adding one adapter + one manifest match entry, with **no changes to feature code** (Open/Closed Principle).
+3. **Clean separation of concerns** (SRP): persistence, API client, auth, transcript, limits, PDF, and each feature are independent units, testable in isolation.
+4. **Type-safe** end to end; **bundled** build that loads unpacked in Chrome (MV3).
+
+### B.2 The platform abstraction (the core extensibility mechanism)
+
+```ts
+// core/platform/PlatformAdapter.ts
+export interface VideoContext {
+  /** Stable, normalized id used as the DB/storage key (was getYouTubeUrl()). */
+  contentId: string;
+  contentUrl: string;
+  title: string;
+}
+
+export interface TranscriptSegment { start: number; duration: number; text: string; }
+
+export interface PlatformAdapter {
+  readonly id: 'youtube' | 'coursera' | 'deeplearning' | string;
+  /** Does this adapter handle the current location? */
+  matches(url: URL): boolean;
+  /** True when we're on an actual video/content page (was isYouTubeVideoPage). */
+  isContentPage(): boolean;
+  /** Identity + metadata for the current content (was getYouTubeUrl + title). */
+  getVideoContext(): VideoContext;
+  /** The media element to screenshot (was document.querySelector('video')). */
+  getVideoElement(): HTMLVideoElement | null;
+  /** Where the panel mounts (was #related…ytd-watch-flexy). */
+  getInjectionTarget(): Element | null;
+  /** Platform-specific transcript retrieval (was getYoutubeTranscript). */
+  getTranscript(ctx: VideoContext): Promise<{ success: boolean; data: TranscriptSegment[] | null; error: string | null }>;
+  /** Fire `onChange` on SPA navigation (was watchYouTubeNavigation/MutationObserver). */
+  watchNavigation(onChange: () => void): () => void; // returns unsubscribe
+}
+```
+
+- **`core/platform/registry.ts`** holds the registered adapters; `resolveAdapter(location)` returns the first whose `matches()` is true. The content-script entry picks the adapter at runtime, so one built extension renders correctly per platform.
+- **`platforms/youtube/YouTubeAdapter.ts`** is the first implementation (ports A.3, A.4, A.6 capture target, A.9 transcript).
+
+### B.3 Directory layout (feature-sliced)
+
+```
+clip-insights-ext-<react>/
+  manifest.config.ts            # typed MV3 manifest (CRXJS) — host_permissions/matches list = platforms
+  vite.config.ts
+  tsconfig.json
+  ARCHITECTURE.md               # (this file, moved here)
+  src/
+    content/
+      index.ts                  # entry: resolve adapter → mount React app into injection target (Shadow DOM)
+      mount.tsx
+    core/                       # platform-agnostic, framework-agnostic
+      platform/                 # PlatformAdapter, registry, VideoContext, types
+      storage/                  # IndexedDB layer (preserves schema from A.5) + localStorage limit store
+      api/                      # typed client for the 6 endpoints (A.16) + env (API_URL)
+      auth/                     # crypto (PBKDF2/AES-GCM), token store, session (A.12)
+      transcript/               # token-budget slicing (A.9) + transcriptCache (one fetch/content, shared by all features)
+      screenshot/               # captureFrame: video -> JPEG (A.6, now content-side)
+      keyboard/                 # isolateKeyboard: stop host-page hotkeys leaking from the Shadow DOM (B.7)
+      pdf/                      # generatePDF (A.13)
+      limits/                   # unified quota/limit service (A.11)
+      time.ts                   # convertSecondsToHMS, etc.
+    features/                   # vertical slices (UI + logic per feature)
+      timeline/  insights/  chat/  auth/  export/  transcript/
+    platforms/
+      youtube/                  # YouTubeAdapter + youtube transcript impl
+      # coursera/  deeplearning/  (future — added without touching features/ or core/)
+    ui/                         # shared composition (App/Panel), components, icons, toast/, scoped styles
+    assets/                     # icons, logo
+```
+
+### B.4 Module responsibilities (SRP map from the old code)
+
+| Old (content.js / *.js) | New home |
+|---|---|
+| `injectClipInsightsNotepad`, `watchYouTubeNavigation`, `waitForElement`, `isYouTubeVideoPage`, `getYouTubeUrl` | `platforms/youtube/YouTubeAdapter` + `content/` |
+| `YouTubeNotesDatabase` (database.js) | `core/storage` (schema preserved; renamed to a platform-neutral store keyed by `contentId`) |
+| `getYoutubeTranscript`, `copyTranscript`, `fetchTranscript`, `receiveTokenLimit` | transcript fetch → `platforms/youtube`; slicing/budget → `core/transcript`; copy UI → `features/transcript` |
+| `getSummary`/`getKeypoints` (+ format/parse) | `features/summary`, `features/keypoints` sharing one `core/api` call (kills the duplication) |
+| `sendMessage`, `getChatHistory`, SSE parsing | `features/chat` + `core/api` streaming helper |
+| `authenticate`, token crypto, refresh, status | `core/auth` + `features/auth` |
+| `generatePDF`, `saveAsPDF`, `uploadPDF` | `core/pdf` + `features/export` |
+| limit/badge helpers, retention `deleteOldRecords` | `core/limits` + `core/storage` |
+| `background.js` capture functions | `core/screenshot` (run directly in the content script — no SW needed) |
+
+### B.5 Key migration decisions / constraints
+
+- **UI isolation:** the React panel mounts inside a **Shadow DOM** root so YouTube's CSS can't bleak in/out (replacing the global, namespaced `styles.css` approach). Styles ship scoped within the shadow root.
+- **Screenshot capture moves into the content script.** v3 routed canvas-from-`<video>` through the background SW via `chrome.scripting.executeScript`, but that injected function ran in the same isolated world the content script already has, and YouTube media is same-origin (MSE blob URLs) so the canvas is not tainted. Capturing directly (`core/screenshot` using the adapter's `getVideoElement()`) removes the SW, the messaging round-trip, and the `scripting` permission (KISS/YAGNI). No background service worker is needed.
+- **Storage schema frozen** at the current shape (A.5) for data continuity; access is wrapped in a typed repository per content type.
+- **`API_URL` and `ENCRYPTION_KEY`** move to build-time env (`.env` / `import.meta.env`) with documented dev/prod separation; behaviour unchanged.
+- **Limits unified** behind one `core/limits` service exposing per-feature quotas (screenshots/video, summary+keypoints/day, chat/day) — the four overlapping systems collapse to one, preserving the same numeric limits and reset windows.
+- **Dead code dropped:** `popup.js`, `pdfobject.min.js`, the legacy `localStorage` note/screenshot helpers, the inline `<style>` block.
+
+### B.6 Adding a new platform later (the payoff)
+
+1. Create `src/platforms/<name>/<Name>Adapter.ts` implementing `PlatformAdapter`.
+2. Register it in `core/platform/registry.ts`.
+3. Add the host match to `manifest.config.ts` (`content_scripts.matches` + `host_permissions`).
+
+No changes to `features/*` or `core/*`. The same build, on a Coursera lecture page, resolves the Coursera adapter and renders the same panel with Coursera-specific injection/transcript wiring.
+
+### B.7 Post-migration fixes (parity & robustness)
+
+These address issues found after the first conversion. Each fix is platform-agnostic so it benefits every future adapter.
+
+- **Host-page keyboard leak (`core/keyboard/isolateKeyboard.ts`).** Keyboard events are *composed*, so they bubble out of the Shadow DOM to `document`, where host platforms bind single-key hotkeys (YouTube's `i`, `l`, `f`, …). Event retargeting makes the host see the focused element as the shadow host (`<div>`), not our `<input>`, so its "is the user typing?" check fails and it fires shortcuts while the user types. Fix: `stopPropagation()` for `keydown`/`keyup`/`keypress` at the shadow root (wired in `content/mount.tsx`). React 18 delegates its listeners to the render container (a child of the shadow root), so it still receives events first — typing and in-panel handling keep working. This is the general defense for any host platform with global hotkeys. (v3 was unaffected only because it was not in a Shadow DOM.)
+- **Title freshness for PDF (`PlatformAdapter.getTitle()`).** The PDF title/filename now comes from `adapter.getTitle()`, read *fresh* at export time, instead of the title captured at mount. YouTube updates `document.title` shortly after SPA navigation, so the mount-time value was often a stale/home title; the YouTube adapter prefers the watch-page title element and falls back to `document.title`.
+- **Single transcript source of truth (`core/transcript/transcriptCache.ts`).** Each feature used to fetch the transcript independently; the transcript API is intermittent, so Copy could succeed while Summary/Chat saw "no captions" and sent that string to the backend. The cache memoizes the first successful fetch per `contentId` (with one retry; failures are not cached) so Copy, Summary, Key Points and Chat all use the same result.
+- **Don't send a non-transcript to the AI.** `getSlicedTranscript` now reports `available: false` for empty/whitespace slices, and **chat** now guards on `available` before consuming a credit or calling the backend (matching summary/key points). Genuinely caption-less videos get a clear "transcript unavailable" message from the frontend.
+  - *Backend caveat:* `videos/services/summarize.py` caches summaries by `youtube_url` (`caching = True`). A URL whose summary was poisoned by an earlier bad transcript will keep returning the bad summary regardless of what the client now sends — that row must be cleared (or transcript validation added) on the backend.
+- **Toasts replace `alert()` (`ui/toast/`).** A `ToastProvider` + `useToast()` + `<Toaster/>` render non-blocking success/error/info notifications scoped inside the panel; every former `alert()` now routes through it.
+- **Styling parity.** `:host { all: initial }` reset the panel's base font to 16px, oversizing v3's `em`/`larger` text; an explicit 14px base plus UA-margin resets for headings/paragraphs restore the original proportions. The chat messages area uses a fixed height (a `flex:1` child collapsed with no container height), and login inputs are full-width block.
