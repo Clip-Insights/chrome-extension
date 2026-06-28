@@ -59,15 +59,10 @@ export function parseKeypoints(input: unknown): string[] {
 }
 
 /**
- * Convert the AI summary's lightweight markdown (`**bold**`, newlines, `- ` bullets)
- * to HTML for rendering inside the (sandboxed) shadow root.
+ * Convert the AI summary's lightweight markdown (`**bold**`, newlines) to HTML
+ * for rendering inside the (sandboxed) shadow root. The summary is prose; key
+ * points are returned separately as an array, so no list handling is needed.
  */
 export function formatSummaryToHtml(summaryText: string): string {
-  let html = summaryText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\n/g, '<br>');
-  html = html.replace(/-\s(.*?)<br>/g, '<li>$1</li>');
-  html = html.replace(/<br>\*\*Key Themes:\*\*<br>/g, '<br><strong>Key Themes:</strong><ul>');
-  html = html.replace(/<\/li><br>/g, '</li>');
-  html += '</ul>';
-  return html;
+  return summaryText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 }

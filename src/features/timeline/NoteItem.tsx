@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { NoteRecord } from '@/core/types';
 import { formatHMS } from '@/core/time';
-import { CloseIcon, EditIcon } from '@/ui/icons';
+import { MoreIcon } from '@/ui/icons';
 import { useToast } from '@/ui/toast/ToastContext';
 
 interface NoteItemProps {
@@ -13,7 +13,20 @@ interface NoteItemProps {
 export function NoteItem({ note, onEdit, onDelete }: NoteItemProps) {
   const { show } = useToast();
   const [editing, setEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState(note.text);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the options menu on an outside click. `composedPath` is used so the
+  // check works across the panel's shadow DOM boundary.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !event.composedPath().includes(menuRef.current)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [menuOpen]);
 
   const save = async () => {
     const text = draft.trim();
@@ -27,15 +40,36 @@ export function NoteItem({ note, onEdit, onDelete }: NoteItemProps) {
 
   return (
     <div className="clipinsights__screenshot-note">
-      <div className="clipinsights__note-actions">
-        <button className="clipinsights__update-btn" onClick={() => setEditing(true)}>
-          <EditIcon />
-          <span className="clipinsights__btnTooltip">Edit</span>
+      <div className="clipinsights__note-menu" ref={menuRef}>
+        <button
+          className="clipinsights__note-menu-btn"
+          aria-label="Note options"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <MoreIcon />
         </button>
-        <button className="clipinsights__delete-btn" onClick={() => note.id !== undefined && void onDelete(note.id)}>
-          <CloseIcon />
-          <span className="clipinsights__btnTooltip">Delete</span>
-        </button>
+        {menuOpen && (
+          <div className="clipinsights__note-menu-dropdown">
+            <button
+              onClick={() => {
+                setDraft(note.text);
+                setEditing(true);
+                setMenuOpen(false);
+              }}
+            >
+              Edit
+            </button>
+            <button
+              className="clipinsights__note-menu-danger"
+              onClick={() => {
+                setMenuOpen(false);
+                if (note.id !== undefined) void onDelete(note.id);
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       {editing ? (

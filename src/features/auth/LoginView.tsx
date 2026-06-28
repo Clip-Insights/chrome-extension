@@ -22,7 +22,7 @@ export function LoginView({ onLogin, onBack }: LoginViewProps) {
   };
 
   return (
-    <div id="clipinsights__loginContainer" style={{ display: 'block', textAlign: 'center' }}>
+    <div id="clipinsights__loginContainer">
       <h4 className="clipinsights__h4">Login</h4>
       <input
         type="email"

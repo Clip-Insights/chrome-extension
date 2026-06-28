@@ -3,5 +3,6 @@ dist
 *.local
 .env.local
 .DS_Store
+.env
 *.log
 .vite

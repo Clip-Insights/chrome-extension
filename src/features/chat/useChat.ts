@@ -10,7 +10,8 @@ const TRANSCRIPT_UNAVAILABLE_MESSAGE =
   "Sorry — this video's transcript is unavailable, so I can't answer questions about it.";
 
 const CHAT_MEMORY_ENABLED = true;
-const CHAT_MEMORY_WINDOW_SIZE = 4;
+// Carry the last 3 prior messages as conversation history (matches the backend window).
+const CHAT_MEMORY_WINDOW_SIZE = 3;
 const MAX_QUERY_LENGTH = 1000;
 
 export interface UiMessage {
@@ -124,7 +125,7 @@ export function useChat(): UseChat {
             transcription: sliced.transcript,
             stream: true,
             chat_memory_enabled: CHAT_MEMORY_ENABLED,
-            chat_history: CHAT_MEMORY_ENABLED ? buildHistory(withUser) : [],
+            chat_history: CHAT_MEMORY_ENABLED ? buildHistory(messages) : [],
           },
           {
             onToken: (token) => updateLastBot((content) => content + token),

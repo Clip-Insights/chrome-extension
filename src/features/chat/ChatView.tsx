@@ -58,14 +58,29 @@ export function ChatView({ chat, onClose }: ChatViewProps) {
       </div>
 
       <div id="clipinsights__chatMessages" ref={messagesRef}>
-        {chat.messages.map((m, i) => (
-          <div
-            key={i}
-            className={`clipinsights__message ${m.role === 'user' ? 'clipinsights__user' : 'clipinsights__bot'}`}
-          >
-            {m.content}
-          </div>
-        ))}
+        {chat.messages.map((m, i) => {
+          const isLast = i === chat.messages.length - 1;
+          const isStreaming = chat.sending && isLast && m.role === 'bot';
+          return (
+            <div
+              key={i}
+              className={`clipinsights__message ${m.role === 'user' ? 'clipinsights__user' : 'clipinsights__bot'}`}
+            >
+              {isStreaming && m.content === '' ? (
+                <span className="clipinsights__typing" aria-label="Clip Bot is thinking">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              ) : (
+                <>
+                  {m.content}
+                  {isStreaming && <span className="clipinsights__caret" />}
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div id="clipinsights__chatInputContainer">

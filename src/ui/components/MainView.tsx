@@ -56,7 +56,7 @@ export function MainView({
       <div className="clipinsights__button-container">
         <button className="clipinsights__button" id="clipinsights__screenshotBtn" onClick={() => void timeline.addScreenshot()}>
           <SnapshotIcon />
-          Snapshot
+          <span>Snapshot</span>
           <span className="clipinsights__btnTooltip">Capture screenshot</span>
         </button>
         <button className="clipinsights__button" id="clipinsights__summaryBtn" onClick={onOpenSummary}>
@@ -71,7 +71,7 @@ export function MainView({
         </button>
         <button className="clipinsights__button" id="clipinsights__chatBtn" onClick={onOpenChat}>
           <ChatIcon />
-          Chat
+          <span>Chat</span>
           <span className="clipinsights__btnTooltip">Chat with AI</span>
         </button>
       </div>
@@ -93,7 +93,7 @@ export function MainView({
           onClick={() => void runBusy(setSaving, exporter.downloadPdf)}
         >
           <DownloadIcon />
-          {saving ? 'Saving...' : 'Download'}
+          <span>{saving ? 'Saving...' : 'Download'}</span>
           <span className="clipinsights__btnTooltip">Download as PDF</span>
         </button>
         <button
@@ -103,7 +103,7 @@ export function MainView({
           onClick={() => void runBusy(setUploading, exporter.uploadPdf)}
         >
           <UploadIcon />
-          {uploading ? 'Uploading...' : 'Upload'}
+          <span>{uploading ? 'Uploading...' : 'Upload'}</span>
           <span className="clipinsights__btnTooltip">Upload to Clip Insights</span>
         </button>
         <button
@@ -118,7 +118,7 @@ export function MainView({
         </button>
         <button className="clipinsights__button" id="clipinsights__clearBtn" onClick={onClear}>
           <ClearIcon />
-          Clear
+          <span>Clear</span>
           <span className="clipinsights__btnTooltip">Clear all data</span>
         </button>
       </div>

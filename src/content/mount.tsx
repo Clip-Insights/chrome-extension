@@ -20,6 +20,11 @@ export function mountPanel(target: Element, adapter: PlatformAdapter, ctx: Video
 
   host = document.createElement('div');
   host.id = HOST_ID;
+  // Set spacing on the host element itself (outside the shadow root) so it is not
+  // affected by `:host { all: initial }` and reliably separates the panel from
+  // the host page's content below it.
+  host.style.display = 'block';
+  host.style.marginBottom = '24px';
   const shadow = host.attachShadow({ mode: 'open' });
 
   const style = document.createElement('style');

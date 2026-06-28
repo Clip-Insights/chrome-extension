@@ -1,14 +1,16 @@
 /*
- * Panel styles, scoped to the Shadow DOM (mount.tsx). Ported from v3 styles.css
- * with the host page's CSS no longer able to interfere. Class/id names are kept
- * (clipinsights__*) so the visual design matches v3 exactly.
+ * Clip Insights panel styles, scoped to the Shadow DOM (mount.tsx).
+ *
+ * Design system: one indigo brand identity, a single compact type scale, and a
+ * 4px spacing rhythm. The whole panel is a fixed-height card (--ci-panel-height);
+ * every view lays out as a flex column inside it and its own scroll region absorbs
+ * overflow, so switching views never changes the panel's height or makes it jump.
  */
 
 :host {
   all: initial;
   display: block;
   width: 100%;
-  margin-bottom: 20px;
 }
 
 *,
@@ -17,20 +19,29 @@
   box-sizing: border-box;
 }
 
-/*
- * `:host { all: initial }` resets the panel's base font-size to the UA default
- * (16px), so v3's relative sizes (em / `larger`) rendered oversized inside the
- * shadow root. Pin an explicit base so typography matches the original design.
- */
 #clip-insights-notepad {
+  /* Brand palette */
+  --ci-accent: #4255ff;
+  --ci-accent-strong: #2d3cc1;
+  --ci-accent-soft: #edefff;
+  --ci-ink: #26283b;
+  --ci-text: #4b4d63;
+  --ci-muted: #8a8da3;
+  --ci-line: #e7e8f0;
+  --ci-surface: #ffffff;
+  --ci-canvas: #f7f8fc;
+
+  /* The single source of truth for the panel height. */
+  --ci-panel-height: 450px;
+
   position: relative;
   font-family: 'Roboto', 'Inter', system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
-  color: #333;
+  color: var(--ci-text);
 }
 
-/* The UA stylesheet still applies inside the shadow root; tame default margins. */
+/* Tame UA defaults that still apply inside the shadow root. */
 #clip-insights-notepad h1,
 #clip-insights-notepad h2,
 #clip-insights-notepad h3,
@@ -46,140 +57,184 @@
 
 #clipinsights__body {
   width: 100%;
-  font-family: 'Roboto', 'Inter', system-ui, sans-serif;
-  background-color: #ffffff;
-  padding: 20px;
-  color: #333;
-  border-radius: 16px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  height: var(--ci-panel-height);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ci-surface);
+  padding: 14px;
+  color: var(--ci-text);
+  border: 1px solid var(--ci-line);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(38, 40, 59, 0.12);
+  overflow: hidden;
 }
 
-/* Header */
+/* Each view fills the space under the header so all views share one height. */
+#clipinsights__mainContent,
+#clipinsights__summaryContainer,
+#clipinsights__keypointsContainer,
+#clipinsights__chatContainer,
+#clipinsights__loginContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ----- Header ----- */
 #clipinsights__top-container {
-  margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-#clipinsights__mainHeading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #26283b;
-  font-size: 1.5em;
-  font-weight: bold;
+  margin-bottom: 12px;
+  flex: 0 0 auto;
 }
 
 #clipinsights__logo {
   text-decoration: none;
 }
 
-/* Buttons */
+#clipinsights__mainHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ci-ink);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+#clipinsights__mainHeading svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+/* ----- Buttons ----- */
 .clipinsights__button {
   position: relative;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: bold;
-  border-radius: 5px;
   border: none;
   cursor: pointer;
-  color: white;
-  transition: background-color 0.3s ease;
-}
-
-.clipinsights__button-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 10px;
-  gap: 5px;
-}
-
-.clipinsights__button-container button:last-child {
-  margin-right: 0;
-}
-
-#clipinsights__clearBtn,
-#clipinsights__saveBtn,
-#clipinsights__uploadBtn {
-  justify-content: center;
-  align-items: center;
-  padding: 10px 10px !important;
-}
-
-#clipinsights__screenshotBtn,
-#clipinsights__summaryBtn,
-#clipinsights__clearBtn,
-#clipinsights__saveBtn,
-#clipinsights__uploadBtn,
-#clipinsights__addNoteBtn,
-#clipinsights__keypointsBtn,
-#clipinsights__chatBtn,
-#clipinsights__loginBtn,
-#clipinsights__backBtn,
-#clipinsights__submitLogin,
-#clipinsights__copyTranscriptBtn {
-  padding: 10px 6px;
-  gap: 5px;
-  border-radius: 16px;
-  font-size: 11px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  color: #26283b;
-  height: 36px;
-  background-color: white;
-}
-
-#clipinsights__chatBtn {
-  padding: 15px 10px;
-}
-
-#clipinsights__screenshotBtn:hover,
-#clipinsights__summaryBtn:hover,
-#clipinsights__clearBtn:hover,
-#clipinsights__saveBtn:hover,
-#clipinsights__uploadBtn:hover,
-#clipinsights__addNoteBtn:hover,
-#clipinsights__keypointsBtn:hover,
-#clipinsights__chatBtn:hover,
-#clipinsights__loginBtn:hover,
-#clipinsights__backBtn:hover,
-#clipinsights__submitLogin:hover,
-#clipinsights__copyTranscriptBtn:hover {
-  color: #4255ff;
-  border-color: #6c757d;
-  background-color: #edefff;
-  transition: background-color 0.1s ease;
+  font-family: inherit;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .clipinsights__button:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Note composer */
-.clipinsights__input-container {
+/* Two single-row action grids of four: top (Snapshot/Summary/Key Points/Chat)
+ * and bottom (Download/Upload/Transcript/Clear). Each is a 4-column grid so all
+ * four buttons sit on one line without widening the card. Buttons stack the icon
+ * over a compact label, which lets the longest label ("Key Points") fit in full
+ * on its own line — no ellipsis, no truncation. */
+.clipinsights__button-container,
+#clipinsights__loginBtnContainer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.clipinsights__button-container {
+  margin-bottom: 12px;
+}
+
+#clipinsights__loginBtnContainer {
+  margin-top: 12px;
+}
+
+.clipinsights__button-container > .clipinsights__button,
+#clipinsights__loginBtnContainer > .clipinsights__button {
+  min-width: 0;
+  height: 56px;
+  padding: 7px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--ci-line);
+  border-radius: 10px;
+  background-color: var(--ci-surface);
+  color: var(--ci-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.clipinsights__button-container > .clipinsights__button > span:not(.clipinsights__btnTooltip),
+#clipinsights__loginBtnContainer > .clipinsights__button > span:not(.clipinsights__btnTooltip) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.clipinsights__button-container > .clipinsights__button svg,
+#clipinsights__loginBtnContainer > .clipinsights__button svg {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+}
+
+.clipinsights__button-container > .clipinsights__button:hover,
+#clipinsights__loginBtnContainer > .clipinsights__button:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  border-color: var(--ci-accent-soft);
+}
+
+/* Header login/logout button */
+#clipinsights__loginBtn {
   display: flex;
   align-items: center;
-  margin: 20px 0;
-  position: relative;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--ci-line);
+  border-radius: 8px;
+  background-color: var(--ci-surface);
+  color: var(--ci-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+#clipinsights__loginBtn:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  border-color: var(--ci-accent-soft);
+}
+
+#clipinsights__loginBtn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ----- Note composer ----- */
+.clipinsights__input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex: 0 0 auto;
 }
 
 #clipinsights__noteInput {
-  font-family: Arial, sans-serif;
-  color: #333;
-  flex-grow: 1;
-  padding: 10px;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  flex: 1 1 auto;
+  font-family: inherit;
+  color: var(--ci-text);
+  padding: 9px 11px;
+  border: 1.5px solid var(--ci-line);
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.4;
   outline: none;
-  margin-right: 4px;
   resize: none;
-  max-height: 2em;
-  line-height: 1.5em;
+  /* Capped at ~2 lines, then scrolls (scrollbar hidden). */
+  min-height: 38px;
+  max-height: 52px;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -189,112 +244,129 @@
 }
 
 #clipinsights__noteInput::placeholder {
-  font-size: 14px;
-  color: #888;
+  color: var(--ci-muted);
 }
 
 #clipinsights__noteInput:focus {
-  border-color: #4255ff;
+  border-color: var(--ci-accent);
 }
 
-.clipinsights__h4 {
-  font-size: 16px;
-  color: #555;
-  padding-bottom: 5px;
+#clipinsights__addNoteBtn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ci-line);
+  border-radius: 9px;
+  background-color: var(--ci-surface);
 }
 
-/* Timeline (notes + screenshots) */
+#clipinsights__addNoteBtn {
+  color: var(--ci-accent);
+}
+
+#clipinsights__addNoteBtn:hover {
+  background-color: var(--ci-accent-soft);
+  border-color: var(--ci-accent-soft);
+}
+
+#clipinsights__addNoteBtn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ----- Timeline (notes + screenshots) ----- */
 #clipinsights__screenshotNoteContainer {
   position: relative;
-  margin-top: 15px;
-  height: 252px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  background-color: white;
+  background-color: var(--ci-canvas);
   padding: 10px;
-  border-radius: 5px;
+  border: 1px solid var(--ci-line);
+  border-radius: 10px;
   scrollbar-width: thin;
-  scrollbar-color: #3d52a1 #f4f4f9;
+  scrollbar-color: var(--ci-accent) transparent;
 }
 
 #clipinsights__screenshotNoteContainer::-webkit-scrollbar {
-  width: 8px;
-}
-#clipinsights__screenshotNoteContainer::-webkit-scrollbar-track {
-  background: #3d52a1;
-  border-radius: 20px;
+  width: 6px;
 }
 #clipinsights__screenshotNoteContainer::-webkit-scrollbar-thumb {
-  background-color: #3d52a1;
+  background-color: var(--ci-accent);
   border-radius: 20px;
-  border: 2px solid #3d52a1;
-}
-#clipinsights__screenshotNoteContainer::-webkit-scrollbar-thumb:hover {
-  background-color: #ddd;
 }
 
 .clipinsights__screenshot-note {
   position: relative;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 12px;
   padding-bottom: 10px;
+  border-bottom: 1px solid var(--ci-line);
   max-width: 100%;
   word-wrap: break-word;
-  white-space: normal;
+}
+
+.clipinsights__screenshot-note:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .clipinsights__screenshot {
   width: 100%;
   height: auto;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ci-line);
+  margin-bottom: 8px;
+  display: block;
 }
 
 .clipinsights__note {
   position: relative;
-  padding-right: 40px;
+  padding-right: 26px;
   font-size: 13px;
-  color: #555;
-  margin: 0;
+  color: var(--ci-text);
+  margin: 0 0 4px;
 }
 
 .clipinsights__timestamp {
-  font-size: 12px;
-  color: #999;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ci-accent);
 }
 
-/* Note action buttons */
+/* Screenshot delete button */
 .clipinsights__note-actions {
   position: absolute;
   top: 4px;
   right: 4px;
   display: flex;
   gap: 2px;
-  opacity: 0.4;
+  opacity: 0.5;
   transition: opacity 0.15s ease;
-  z-index: 1;
+  z-index: 2;
 }
 
 .clipinsights__screenshot-note:hover .clipinsights__note-actions {
   opacity: 1;
 }
 
-.clipinsights__delete-btn,
-.clipinsights__update-btn {
-  background: transparent;
+.clipinsights__delete-btn {
+  background: rgba(255, 255, 255, 0.85);
   border: none;
-  border-radius: 3px;
-  width: 18px;
-  height: 18px;
-  line-height: 1;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
-  transition: all 0.15s ease;
+  color: #6b7280;
   position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .clipinsights__delete-btn:hover {
@@ -302,24 +374,88 @@
   color: #dc2626;
 }
 
-.clipinsights__update-btn:hover {
-  background-color: #dbeafe;
-  color: #2563eb;
+/* Note options: three-dots button + Edit/Delete menu */
+.clipinsights__note-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+}
+
+.clipinsights__note-menu-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ci-muted);
+  opacity: 0.55;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.clipinsights__screenshot-note:hover .clipinsights__note-menu-btn {
+  opacity: 1;
+}
+
+.clipinsights__note-menu-btn:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+}
+
+.clipinsights__note-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  min-width: 116px;
+  background-color: var(--ci-surface);
+  border: 1px solid var(--ci-line);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(38, 40, 59, 0.16);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.clipinsights__note-menu-dropdown button {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ci-text);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.clipinsights__note-menu-dropdown button:hover {
+  background-color: var(--ci-canvas);
+}
+
+.clipinsights__note-menu-danger {
+  color: #dc2626;
+}
+
+.clipinsights__note-menu-danger:hover {
+  background-color: #fee2e2 !important;
 }
 
 .clipinsights__note-edit {
-  font-family: Arial, sans-serif;
-  color: #333;
+  font-family: inherit;
+  color: var(--ci-text);
   width: 100%;
-  padding: 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  padding: 9px;
+  border: 1.5px solid var(--ci-accent);
+  border-radius: 8px;
   font-size: 13px;
+  line-height: 1.4;
   outline: none;
   resize: none;
-  max-height: 20em;
-  line-height: 1.4em;
-  background-color: #fafafa;
+  max-height: 96px;
+  background-color: var(--ci-surface);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -328,87 +464,101 @@
   display: none;
 }
 
-/* Bottom action row */
-#clipinsights__loginBtnContainer {
-  display: flex;
-  justify-content: center;
-  padding-top: 12px;
-  gap: 5px;
-}
-
-#clipinsights__loginBtnContainer .clipinsights__btnTooltip {
-  top: auto;
-  bottom: calc(100% + 6px);
-}
-
-#clipinsights__loginBtnContainer .clipinsights__btnTooltip::before {
-  bottom: auto;
-  top: 100%;
-  border-color: #1f2937 transparent transparent transparent;
-}
-
-/* Login */
+/* ----- Login ----- */
 #clipinsights__loginContainer {
-  margin-top: 8px;
   text-align: center;
+  justify-content: center;
+}
+
+#clipinsights__loginContainer h4.clipinsights__h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ci-ink);
+  margin-bottom: 16px;
 }
 
 .clipinsights__loginInputs {
   display: block;
   width: 100%;
-  padding: 8px 12px;
-  border: 2px solid #ddd;
-  border-radius: 4px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--ci-line);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: inherit;
   outline: none;
 }
 
 .clipinsights__loginInputs:focus {
-  border-color: #4255ff;
+  border-color: var(--ci-accent);
 }
 
 #clipinsights__emailInput {
   margin-bottom: 12px;
 }
 
-#clipinsights__loginContainer h4 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #26283b;
-  margin-bottom: 12px;
-}
-
 #clipinsights__submitBackBtns {
-  margin-top: 10px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-#clipinsights__backBtn,
-#clipinsights__submitLogin {
-  width: 56px;
+#clipinsights__submitLogin,
+#clipinsights__backBtn {
+  width: 84px;
+  height: 36px;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#clipinsights__submitLogin {
+  border: none;
+  background-color: var(--ci-accent);
+  color: #fff;
+}
+
+#clipinsights__submitLogin:hover {
+  background-color: var(--ci-accent-strong);
+}
+
+#clipinsights__backBtn {
+  border: 1px solid var(--ci-line);
+  background-color: var(--ci-surface);
+  color: var(--ci-ink);
+}
+
+#clipinsights__backBtn:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  border-color: var(--ci-accent-soft);
 }
 
 #clipinsights__registrationLink {
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: 14px !important;
+  font-size: 12px;
+  color: var(--ci-muted);
 }
 
 #clipinsights__registrationLink a {
   margin-left: 4px;
-  color: #4255ff;
+  color: var(--ci-accent);
   text-decoration: none;
+  font-weight: 600;
 }
 
-/* Summary & Key Points */
+/* ----- Summary & Key Points ----- */
 #clipinsights__summaryHeader,
 #clipinsights__keyPointsHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 8px 0 12px;
+  margin-bottom: 10px;
+  flex: 0 0 auto;
 }
 
 #clipinsights__summaryHeading,
@@ -416,9 +566,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  color: #26283b;
+  color: var(--ci-ink);
 }
 
 #clipinsights__closeKeyPoints,
@@ -426,60 +576,100 @@
 #clipinsights__closeChat {
   background: none;
   border: none;
-  color: #4255ff;
-  font-size: 16px;
+  color: var(--ci-muted);
+  font-size: 15px;
+  line-height: 1;
   cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+#clipinsights__closeKeyPoints:hover,
+#clipinsights__closeSummary:hover,
+#clipinsights__closeChat:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
 }
 
 #clipinsights__keypoints,
 #clipinsights__summary {
-  padding: 16px;
-  border-radius: 8px;
-  background-color: ghostwhite;
-  font-size: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 14px;
+  border-radius: 10px;
+  background-color: var(--ci-canvas);
+  border: 1px solid var(--ci-line);
+  border-left: 4px solid var(--ci-accent);
+  font-size: 13px;
   line-height: 1.6;
-  position: relative;
-  border-left: 6px solid #3e54a3bf;
-  max-height: 360px;
+  color: var(--ci-text);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #3d52a1 #f4f4f9;
+  scrollbar-color: var(--ci-accent) transparent;
+}
+
+#clipinsights__keypoints::-webkit-scrollbar,
+#clipinsights__summary::-webkit-scrollbar {
+  width: 6px;
+}
+#clipinsights__keypoints::-webkit-scrollbar-thumb,
+#clipinsights__summary::-webkit-scrollbar-thumb {
+  background-color: var(--ci-accent);
+  border-radius: 20px;
+}
+
+#clipinsights__summary strong {
+  color: var(--ci-ink);
 }
 
 #clipinsights__keypoints ul.styled-keypoints {
-  padding-left: 5px;
+  padding-left: 2px;
   list-style-type: none;
   margin: 0;
 }
 
 #clipinsights__keypoints ul.styled-keypoints li {
   position: relative;
-  padding-left: 14px;
-  margin-bottom: 8px;
-  font-size: 1em;
-  color: #333;
+  padding-left: 16px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--ci-text);
   line-height: 1.5;
 }
 
-#clipinsights__keypoints ul.styled-keypoints li::before {
-  content: '•';
-  position: absolute;
-  left: 0;
-  color: #007acc;
-  font-size: 1.2em;
-  font-weight: bold;
+#clipinsights__keypoints ul.styled-keypoints li:last-child {
+  margin-bottom: 0;
 }
 
-/* Shared status bar (chat / summary / keypoints) */
+#clipinsights__keypoints ul.styled-keypoints li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--ci-accent);
+}
+
+/* ----- Shared status bar (summary / key points / chat) ----- */
 .clipinsights__statusBar,
 #clipinsights__chatStatusBar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background-color: #f8f9fb;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 12px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  background-color: var(--ci-canvas);
+  border: 1px solid var(--ci-line);
+  border-radius: 8px;
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+#clipinsights__chatStatusBar {
+  margin: 10px 0;
 }
 
 .clipinsights__contextInfo,
@@ -487,7 +677,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #6b7280;
+  color: var(--ci-muted);
 }
 
 .clipinsights__contextIcon {
@@ -498,7 +688,7 @@
 .clipinsights__contextText,
 #clipinsights__contextTime {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--ci-muted);
 }
 
 .clipinsights__contextText.loading,
@@ -532,11 +722,10 @@
   gap: 4px;
   padding: 3px 8px;
   background-color: #f0fdf4;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: #16a34a;
-  transition: all 0.2s ease;
   position: relative;
   cursor: default;
 }
@@ -558,12 +747,12 @@
   position: absolute;
   bottom: calc(100% + 6px);
   right: 0;
-  background-color: #1f2937;
+  background-color: var(--ci-ink);
   color: #fff;
   font-size: 10px;
   font-weight: 400;
   padding: 5px 8px;
-  border-radius: 4px;
+  border-radius: 5px;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
@@ -578,35 +767,24 @@
   visibility: visible;
 }
 
-/* Button tooltips */
+/* ----- Button tooltips ----- */
 .clipinsights__btnTooltip {
   position: absolute;
   top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  background-color: #1f2937;
+  background-color: var(--ci-ink);
   color: #fff;
   font-size: 10px;
   font-weight: 400;
   padding: 5px 8px;
-  border-radius: 4px;
+  border-radius: 5px;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.15s ease, visibility 0.15s ease;
   pointer-events: none;
-  z-index: 2;
-}
-
-.clipinsights__btnTooltip::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 4px;
-  border-style: solid;
-  border-color: transparent transparent #1f2937 transparent;
+  z-index: 12;
 }
 
 .clipinsights__button:hover .clipinsights__btnTooltip {
@@ -614,97 +792,179 @@
   visibility: visible;
 }
 
-/* Chat */
+/* Bottom-row tooltips open upward so they aren't clipped by the card edge. */
+#clipinsights__loginBtnContainer .clipinsights__btnTooltip {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* ----- Chat ----- */
 #clipinsights__chatContainer {
-  width: 100%;
-  max-width: 100%;
-  background-color: white;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
+  background-color: var(--ci-surface);
 }
 
 #clipinsights__chatHeader {
-  background-color: #edefff;
-  color: #26283b;
-  padding: 10px;
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-ink);
+  padding: 10px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-radius: 12px 12px 0 0;
+  border-radius: 10px;
+  flex: 0 0 auto;
 }
 
 #clipinsights__chatHeader .clipinsights__h4 {
-  font-size: 15px;
-  font-weight: 500;
-  color: #26283b;
-  padding-bottom: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ci-ink);
 }
 
-/*
- * Fixed height (not `flex: 1`): the chat container has no explicit height, so a
- * flexible messages area would collapse to its content. A set height gives a
- * stable, scrollable conversation panel.
- */
 #clipinsights__chatMessages {
-  height: 300px;
-  padding: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 4px 2px;
   overflow-y: auto;
-  background-color: white;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ci-accent) transparent;
 }
 
-#clipinsights__chatInputContainer {
-  display: flex;
-  padding: 10px;
-  background-color: #fff;
-  border-top: 1px solid #ddd;
+#clipinsights__chatMessages::-webkit-scrollbar {
+  width: 6px;
 }
-
-#clipinsights__chatInput {
-  flex-grow: 1;
-  padding: 8px;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  outline: none;
-}
-
-#clipinsights__sendChatBtn {
-  background-color: #4255ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  margin-left: 8px;
-  cursor: pointer;
-  padding: 8px 12px;
-  transition: background-color 0.3s ease;
-}
-
-#clipinsights__sendChatBtn:hover {
-  background-color: #2d3cc1;
+#clipinsights__chatMessages::-webkit-scrollbar-thumb {
+  background-color: var(--ci-accent);
+  border-radius: 20px;
 }
 
 .clipinsights__message {
-  margin-bottom: 10px;
-  padding: 8px;
-  border-radius: 8px;
-  max-width: 80%;
+  padding: 9px 11px;
+  border-radius: 12px;
+  max-width: 82%;
+  font-size: 12.5px;
+  line-height: 1.45;
   word-wrap: break-word;
 }
 
 .clipinsights__message.clipinsights__user {
-  background-color: #edefff;
-  color: #26283b;
+  background-color: var(--ci-accent);
+  color: #fff;
   align-self: flex-end;
+  border-bottom-right-radius: 4px;
 }
 
 .clipinsights__message.clipinsights__bot {
-  background-color: #f4f7fc;
+  background-color: var(--ci-canvas);
+  color: var(--ci-text);
   align-self: flex-start;
+  border-bottom-left-radius: 4px;
 }
 
-/* Toasts — non-blocking feedback that replaces alert() */
+/* "Thinking" indicator: three bouncing dots shown in the bot bubble while we
+ * wait for the first streamed token. */
+.clipinsights__typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.clipinsights__typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--ci-muted);
+  animation: clipinsights-typing 1.2s ease-in-out infinite;
+}
+
+.clipinsights__typing span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.clipinsights__typing span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes clipinsights-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Blinking caret trailing the live-streaming answer, like a typing cursor. */
+.clipinsights__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background-color: var(--ci-accent);
+  animation: clipinsights-caret 1s steps(2, start) infinite;
+}
+
+@keyframes clipinsights-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+#clipinsights__chatInputContainer {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  flex: 0 0 auto;
+}
+
+#clipinsights__chatInput {
+  flex: 1 1 auto;
+  padding: 9px 11px;
+  border: 1.5px solid var(--ci-line);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+#clipinsights__chatInput:focus {
+  border-color: var(--ci-accent);
+}
+
+#clipinsights__sendChatBtn {
+  flex: 0 0 auto;
+  background-color: var(--ci-accent);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#clipinsights__sendChatBtn:hover {
+  background-color: var(--ci-accent-strong);
+}
+
+#clipinsights__sendChatBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ----- Toasts ----- */
 .clipinsights__toaster {
   position: absolute;
   left: 12px;
@@ -721,12 +981,11 @@
   pointer-events: auto;
   cursor: pointer;
   padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
   line-height: 1.4;
   color: #fff;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-  border-left: 4px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 16px rgba(38, 40, 59, 0.22);
   animation: clipinsights-toast-in 0.18s ease-out;
   word-wrap: break-word;
 }
@@ -740,7 +999,7 @@
 }
 
 .clipinsights__toast--info {
-  background-color: #2563eb;
+  background-color: var(--ci-accent);
 }
 
 @keyframes clipinsights-toast-in {

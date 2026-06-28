@@ -16,8 +16,12 @@ export function NoteComposer({ onAddNote }: NoteComposerProps) {
       show('Please enter a note first.', 'info');
       return;
     }
-    await onAddNote(text);
-    setValue('');
+    try {
+      await onAddNote(text);
+      setValue(''); // Clear only after a successful save so a failed write keeps the text.
+    } catch {
+      // onAddNote already surfaced the error; keep the text for a retry.
+    }
   };
 
   return (

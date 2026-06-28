@@ -21,6 +21,9 @@ import type { TimelineItem } from '@/core/types';
 import { useToast } from '@/ui/toast/ToastContext';
 import { usePlatform } from '@/ui/PlatformContext';
 
+const STORAGE_FULL_MESSAGE =
+  "Couldn't save — your browser storage may be full. Clear old notes/screenshots and try again.";
+
 function insertSorted(items: TimelineItem[], item: TimelineItem): TimelineItem[] {
   return [...items, item].sort((a, b) => a.data.videoTimestamp - b.data.videoTimestamp);
 }
@@ -53,8 +56,17 @@ export function useTimeline(): UseTimeline {
         show('No video found on this page.', 'error');
         return;
       }
-      const note = await saveNote(text, video.currentTime, ctx.contentId);
-      setItems((prev) => insertSorted(prev, { type: 'note', data: note }));
+      try {
+        const note = await saveNote(text, video.currentTime, ctx.contentId);
+        setItems((prev) => insertSorted(prev, { type: 'note', data: note }));
+      } catch (error) {
+        // Never fail silently: a rejected write (e.g. browser storage full) would
+        // otherwise just drop the note with no feedback. Rethrow so the composer
+        // keeps the user's text for a retry.
+        console.error('Failed to save note', error);
+        show(STORAGE_FULL_MESSAGE, 'error');
+        throw error;
+      }
     },
     [adapter, ctx.contentId, show],
   );
@@ -69,10 +81,15 @@ export function useTimeline(): UseTimeline {
       show('No video found on this page.', 'error');
       return;
     }
-    const { dataUrl, time } = captureFrame(video);
-    const shot = await saveScreenshot(dataUrl, time, ctx.contentId);
-    incrementScreenshotCount(ctx.contentId);
-    setItems((prev) => insertSorted(prev, { type: 'screenshot', data: shot }));
+    try {
+      const { dataUrl, time } = captureFrame(video);
+      const shot = await saveScreenshot(dataUrl, time, ctx.contentId);
+      incrementScreenshotCount(ctx.contentId);
+      setItems((prev) => insertSorted(prev, { type: 'screenshot', data: shot }));
+    } catch (error) {
+      console.error('Failed to save screenshot', error);
+      show(STORAGE_FULL_MESSAGE, 'error');
+    }
   }, [adapter, ctx.contentId, show]);
 
   const removeNote = useCallback(async (id: number) => {

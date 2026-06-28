@@ -313,3 +313,56 @@ These address issues found after the first conversion. Each fix is platform-agno
   - *Backend caveat:* `videos/services/summarize.py` caches summaries by `youtube_url` (`caching = True`). A URL whose summary was poisoned by an earlier bad transcript will keep returning the bad summary regardless of what the client now sends — that row must be cleared (or transcript validation added) on the backend.
 - **Toasts replace `alert()` (`ui/toast/`).** A `ToastProvider` + `useToast()` + `<Toaster/>` render non-blocking success/error/info notifications scoped inside the panel; every former `alert()` now routes through it.
 - **Styling parity.** `:host { all: initial }` reset the panel's base font to 16px, oversizing v3's `em`/`larger` text; an explicit 14px base plus UA-margin resets for headings/paragraphs restore the original proportions. The chat messages area uses a fixed height (a `flex:1` child collapsed with no container height), and login inputs are full-width block.
+
+---
+
+## Part C — Current design system, recent changes & styling QA
+
+This section reflects the state after the post-migration UI/UX and backend-integration work. It supersedes the relevant notes above where they differ.
+
+### C.1 Design system (`src/ui/styles.css`)
+
+- **One indigo brand identity** expressed as CSS custom properties on `#clip-insights-notepad` (`--ci-accent`, `--ci-accent-strong`, `--ci-accent-soft`, `--ci-ink`, `--ci-text`, `--ci-muted`, `--ci-line`, `--ci-surface`, `--ci-canvas`). Reuse these tokens — don't hard-code colours.
+- **Fixed-height panel.** `--ci-panel-height: 450px` is the single source of truth for the panel height. `#clipinsights__body` is a flex column of that height; **every view** is a flex column whose scroll region is `flex: 1; min-height: 0`. Result: all views (main, summary, key points, chat, login) are exactly the same height and switching views never makes the panel jump. New views must follow this header-plus-scroll-region pattern.
+- **Action buttons are two 2×2 grids** (`.clipinsights__button-container` for Snapshot/Summary/Key Points/Chat; `#clipinsights__loginBtnContainer` for Download/Upload/Transcript/Clear). A 2-column grid gives each button ~half the card width so the longest label ("Key Points") fits in full — **no ellipsis/truncation**, even down to ~320px. (This replaced the earlier single-row `flex:1` layout that truncated labels.)
+- **Note composer** (`#clipinsights__noteInput`) is capped at ~2 lines (`min-height:38px; max-height:52px`) and scrolls with the scrollbar hidden.
+- **Notes** use a three-dots options menu (`MoreIcon`) with Edit/Delete; screenshots use a hover delete button.
+- **Host margin.** Spacing below the panel is set on the host element in `content/mount.tsx` (`host.style.marginBottom`), *outside* the shadow root, so `:host { all: initial }` can't strip it.
+
+### C.2 Chat "thinking" + streaming UX
+
+- On opening chat, `prepareContext()` shows an "Analyzing video…" status with a pulsing info icon (the connect/loading signal).
+- While waiting for the first streamed token, the bot bubble shows a **three-dot typing indicator** (`.clipinsights__typing`).
+- While tokens stream in, a **blinking caret** (`.clipinsights__caret`) trails the live text, like ChatGPT. Both are driven by `ChatView` from `chat.sending` + whether the last bot message is empty.
+
+### C.3 Storage robustness (screenshots/notes)
+
+- **Screenshots are downscaled** in `core/screenshot/capture.ts` to a 1280px longest edge (JPEG q≈0.6). Full 1080p/4K frames bloated IndexedDB fast — a handful could exhaust the quota and then *silently* block all further writes. Keep the cap.
+- **Writes never fail silently.** `useTimeline.addNote/addScreenshot` wrap the IndexedDB write in try/catch and surface a toast on failure; `NoteComposer` only clears the input after a successful save (so a failed write keeps the user's text). There is no cap on notes; screenshots remain capped at 40/video (`limitService`).
+
+### C.4 Insights & PDF
+
+- Summary/key points come from the backend's `instructor`-structured response: the summary is prose; **key points are a real `string[]`** (parsed by `core/format.parseKeypoints`, rendered as a styled list). `formatSummaryToHtml` only handles `**bold**`/newlines.
+- The PDF (`core/pdf/generatePdf.ts`) is a branded, minimal layout (one palette + one type scale, branded header/footer, aspect-correct screenshots, hanging-indent key points). **Page-break fix:** a shared `drawLines()` helper re-applies the text style on every line, because a mid-block page break runs `footer()` which leaves the font at the small grey caption style — without re-applying, text spilling onto the next page rendered in the wrong size/colour.
+
+### C.5 Build
+
+- `vite.config.ts` sets `build.chunkSizeWarningLimit: 1500`. The content script intentionally bundles React + jsPDF + html2canvas into one file (it loads from local disk, and CRXJS ships the content script as a single bundle), so the default 500 kB warning is cosmetic here.
+
+### C.6 Rendering & QA the styling
+
+Loading the full unpacked extension into an automated browser is awkward, so styling is QA'd against the **real stylesheet** with a lightweight harness:
+
+1. **`render-harness.html`** (project root) `<link>`s the real `src/ui/styles.css` and renders static markup that mirrors each component's DOM, using the **exact icon SVGs** from `src/ui/icons.tsx`. (`:host{all:initial}` simply doesn't match outside a shadow root; the `#clip-insights-notepad` scoped rules do all the work.) It renders all views — main (with a populated timeline), chat (streaming + thinking), summary, key points, login — plus a narrow (320px) copy to catch overflow/clipping.
+2. Serve the extension directory over HTTP (`python -m http.server 8849`) — `file://` is blocked for automated browsers.
+3. Open `http://127.0.0.1:8849/render-harness.html` and screenshot full-page (e.g. via the Playwright MCP) at a realistic sidebar width (~360px) and a narrow one (~320px).
+4. Verify: all views share the 450px height; no truncated button labels; no horizontal overflow; balanced proportions (the timeline/content area, not the header, gets the space); chat indicators animate.
+
+When you change `styles.css` or a component's DOM, keep the harness markup in sync and re-render. The stylesheet is the single source of truth; only the harness's markup/icons are mirrored.
+
+> **Reloading after a build:** the unpacked extension must be **Reloaded** at `chrome://extensions` after every `npm run build`. A stale load is the usual reason "old icons/styles" appear unchanged.
+
+### C.7 Backend integration notes (for reference)
+
+- Summary/key points: `POST /api/textutils/summary/` returns `{summary, keypoints}` from an `instructor`-constrained Pydantic model (no client-side regex needed).
+- Chat: `POST /api/textutils/chat/` streams SSE `data: <token>` lines ending in `[DONE]`; the client sends the sliced transcript + last-4-message history each request (no server-side RAG).
