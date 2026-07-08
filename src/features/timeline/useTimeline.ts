@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { captureFrame } from '@/core/screenshot/capture';
 import {
   decrementScreenshotCount,
+  getPlanInfo,
   getScreenshotCount,
   incrementScreenshotCount,
   resetScreenshotCount,
-  SCREENSHOT_LIMIT_PER_CONTENT,
 } from '@/core/limits/limitService';
 import { purgeOldRecords } from '@/core/storage/retention';
 import {
@@ -30,6 +30,8 @@ function insertSorted(items: TimelineItem[], item: TimelineItem): TimelineItem[]
 
 export interface UseTimeline {
   items: TimelineItem[];
+  /** Per-plan cap on a single note's length, for the composer's live enforcement. */
+  maxNoteChars: number;
   addNote: (text: string) => Promise<void>;
   addScreenshot: () => Promise<void>;
   removeNote: (id: number) => Promise<void>;
@@ -42,9 +44,11 @@ export function useTimeline(): UseTimeline {
   const { adapter, ctx } = usePlatform();
   const { show } = useToast();
   const [items, setItems] = useState<TimelineItem[]>([]);
+  const [maxNoteChars, setMaxNoteChars] = useState(0);
 
   useEffect(() => {
     void getTimeline(ctx.contentId).then(setItems);
+    void getPlanInfo().then((info) => setMaxNoteChars(info.limits.max_note_chars));
     // Retention cleanup, mirroring v3's per-mount purge (ARCHITECTURE.md A.11).
     void purgeOldRecords();
   }, [ctx.contentId]);
@@ -56,8 +60,16 @@ export function useTimeline(): UseTimeline {
         show('No video found on this page.', 'error');
         return;
       }
+      const { limits } = await getPlanInfo();
+      const noteCount = items.filter((i) => i.type === 'note').length;
+      if (noteCount >= limits.max_notes_per_video) {
+        show(`Note limit (${limits.max_notes_per_video}) reached for this video on your plan.`, 'error');
+        return;
+      }
+      // The composer already trims to the plan limit; this is the safety net.
+      const capped = limits.max_note_chars > 0 ? text.slice(0, limits.max_note_chars) : text;
       try {
-        const note = await saveNote(text, video.currentTime, ctx.contentId);
+        const note = await saveNote(capped, video.currentTime, ctx.contentId);
         setItems((prev) => insertSorted(prev, { type: 'note', data: note }));
       } catch (error) {
         // Never fail silently: a rejected write (e.g. browser storage full) would
@@ -68,12 +80,13 @@ export function useTimeline(): UseTimeline {
         throw error;
       }
     },
-    [adapter, ctx.contentId, show],
+    [adapter, ctx.contentId, items, show],
   );
 
   const addScreenshot = useCallback(async () => {
-    if (getScreenshotCount(ctx.contentId) >= SCREENSHOT_LIMIT_PER_CONTENT) {
-      show(`Screenshot limit (${SCREENSHOT_LIMIT_PER_CONTENT}) reached for this video.`, 'error');
+    const { limits } = await getPlanInfo();
+    if (getScreenshotCount(ctx.contentId) >= limits.max_screenshots_per_video) {
+      show(`Screenshot limit (${limits.max_screenshots_per_video}) reached for this video on your plan.`, 'error');
       return;
     }
     const video = adapter.getVideoElement();
@@ -119,5 +132,5 @@ export function useTimeline(): UseTimeline {
     setItems([]);
   }, [ctx.contentId]);
 
-  return { items, addNote, addScreenshot, removeNote, removeScreenshot, editNote, clearAll };
+  return { items, maxNoteChars, addNote, addScreenshot, removeNote, removeScreenshot, editNote, clearAll };
 }

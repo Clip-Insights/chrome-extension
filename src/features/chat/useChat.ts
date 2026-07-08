@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
-import { type ChatMessage, streamChat } from '@/core/api/client';
-import { chatLimit } from '@/core/limits/limitService';
+import { ApiAuthError, ApiLimitError, type ChatMessage, streamChat } from '@/core/api/client';
+import { getValidAccessToken } from '@/core/auth/session';
+import { getPlanInfo, invalidatePlanInfo } from '@/core/limits/limitService';
 import { getSlicedTranscript } from '@/core/transcript/slicer';
 import { useToast } from '@/ui/toast/ToastContext';
 import { usePlatform } from '@/ui/PlatformContext';
@@ -9,10 +10,11 @@ import type { ContextState } from '@/ui/components/StatusBar';
 const TRANSCRIPT_UNAVAILABLE_MESSAGE =
   "Sorry — this video's transcript is unavailable, so I can't answer questions about it.";
 
+const SIGNUP_MESSAGE = 'Chat is free with an account. Sign up to start asking questions.';
+
 const CHAT_MEMORY_ENABLED = true;
 // Carry the last 3 prior messages as conversation history (matches the backend window).
 const CHAT_MEMORY_WINDOW_SIZE = 3;
-const MAX_QUERY_LENGTH = 1000;
 
 export interface UiMessage {
   role: 'user' | 'bot';
@@ -44,7 +46,7 @@ export function useChat(): UseChat {
   const { adapter, ctx } = usePlatform();
   const { show } = useToast();
   const [messages, setMessages] = useState<UiMessage[]>([]);
-  const [remaining, setRemaining] = useState(() => chatLimit.remaining());
+  const [remaining, setRemaining] = useState(0);
   const [contextText, setContextText] = useState('Analyzing video...');
   const [contextState, setContextState] = useState<ContextState>('normal');
   const [sending, setSending] = useState(false);
@@ -57,8 +59,13 @@ export function useChat(): UseChat {
       return next;
     });
 
+  const refreshRemaining = useCallback(async () => {
+    const info = await getPlanInfo();
+    setRemaining(info.usage?.chat.remaining ?? 0);
+  }, []);
+
   const prepareContext = useCallback(async () => {
-    setRemaining(chatLimit.remaining());
+    void refreshRemaining();
     if (!adapter.isContentPage()) {
       setContextText('Not a YouTube video');
       setContextState('error');
@@ -79,23 +86,29 @@ export function useChat(): UseChat {
       setContextText('Context unavailable');
       setContextState('error');
     }
-  }, [adapter, ctx]);
+  }, [adapter, ctx, refreshRemaining]);
 
   const send = useCallback(
     async (raw: string) => {
-      const query = raw.trim();
+      let query = raw.trim();
       if (!query) return;
-      if (query.length > MAX_QUERY_LENGTH) {
-        show('Your message is too long. Please shorten it.', 'error');
-        return;
-      }
-      if (chatLimit.isReached()) {
-        show('Daily chat limit reached. Please try again tomorrow.', 'error');
-        return;
-      }
       if (!adapter.isContentPage()) {
         show('Open a video to start chatting.', 'info');
         return;
+      }
+
+      const token = await getValidAccessToken();
+      if (!token) {
+        show(SIGNUP_MESSAGE, 'info');
+        return;
+      }
+
+      // Oversized questions are trimmed to the plan limit (the backend does the
+      // same), and the user is told instead of being blocked with an error.
+      const { limits } = await getPlanInfo();
+      if (limits.max_chat_query_chars > 0 && query.length > limits.max_chat_query_chars) {
+        query = query.slice(0, limits.max_chat_query_chars);
+        show(`Your message was trimmed to your plan's ${limits.max_chat_query_chars}-character limit.`, 'info');
       }
 
       const withUser: UiMessage[] = [...messages, { role: 'user', content: query }];
@@ -115,7 +128,6 @@ export function useChat(): UseChat {
 
         setContextText(contextLabel(sliced.lastTagTime));
         setContextState('normal');
-        setRemaining(chatLimit.consume());
 
         setMessages([...withUser, { role: 'bot', content: '' }]);
         await streamChat(
@@ -131,14 +143,28 @@ export function useChat(): UseChat {
             onToken: (token) => updateLastBot((content) => content + token),
             onError: (msg) => updateLastBot(() => msg),
           },
+          token,
         );
-      } catch {
+        invalidatePlanInfo();
+        void refreshRemaining();
+      } catch (error) {
+        if (error instanceof ApiLimitError) {
+          setRemaining(0);
+          setMessages([...withUser, { role: 'bot', content: error.message }]);
+          show(error.message, 'error');
+          return;
+        }
+        if (error instanceof ApiAuthError) {
+          setMessages(withUser);
+          show(SIGNUP_MESSAGE, 'info');
+          return;
+        }
         setMessages((prev) => [...prev, { role: 'bot', content: 'Sorry, there was an error. Please try again.' }]);
       } finally {
         setSending(false);
       }
     },
-    [adapter, ctx, messages, show],
+    [adapter, ctx, messages, refreshRemaining, show],
   );
 
   const reset = useCallback(() => setMessages([]), []);

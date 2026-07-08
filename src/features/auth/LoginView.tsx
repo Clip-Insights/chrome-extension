@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { WEB_APP_URL } from '@/core/api/env';
 import type { LoginResult } from '@/core/auth/session';
 import { useToast } from '@/ui/toast/ToastContext';
 
@@ -50,7 +51,7 @@ export function LoginView({ onLogin, onBack }: LoginViewProps) {
       </div>
       <p id="clipinsights__registrationLink">
         Don't have an account?
-        <a href="https://app.clipinsights.com/signup" target="_blank" rel="noreferrer">
+        <a href={`${WEB_APP_URL}/signup`} target="_blank" rel="noreferrer">
           Register!
         </a>
       </p>

@@ -76,7 +76,7 @@ export function MainView({
         </button>
       </div>
 
-      <NoteComposer onAddNote={timeline.addNote} />
+      <NoteComposer onAddNote={timeline.addNote} maxChars={timeline.maxNoteChars} />
 
       <TimelineList
         items={timeline.items}

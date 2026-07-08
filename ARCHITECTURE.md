@@ -291,7 +291,7 @@ clip-insights-ext-<react>/
 - **Screenshot capture moves into the content script.** v3 routed canvas-from-`<video>` through the background SW via `chrome.scripting.executeScript`, but that injected function ran in the same isolated world the content script already has, and YouTube media is same-origin (MSE blob URLs) so the canvas is not tainted. Capturing directly (`core/screenshot` using the adapter's `getVideoElement()`) removes the SW, the messaging round-trip, and the `scripting` permission (KISS/YAGNI). No background service worker is needed.
 - **Storage schema frozen** at the current shape (A.5) for data continuity; access is wrapped in a typed repository per content type.
 - **`API_URL` and `ENCRYPTION_KEY`** move to build-time env (`.env` / `import.meta.env`) with documented dev/prod separation; behaviour unchanged.
-- **Limits unified** behind one `core/limits` service exposing per-feature quotas (screenshots/video, summary+keypoints/day, chat/day) — the four overlapping systems collapse to one, preserving the same numeric limits and reset windows.
+- **Limits are plan-driven (v4.1).** `core/limits/limitService.ts` no longer keeps localStorage daily counters; AI quotas are enforced by the backend (401/429 with a structured body) and the service caches the caller's plan from `GET /api/plans/me/` (guest plan from `GET /api/plans/` when logged out). Client-only limits (note length, notes/video, screenshots/video) use the plan's values; only the per-video screenshot *count* is still tracked locally. Guests opening AI views get a `SignupPrompt` (`Panel.openAiView`).
 - **Dead code dropped:** `popup.js`, `pdfobject.min.js`, the legacy `localStorage` note/screenshot helpers, the inline `<style>` block.
 
 ### B.6 Adding a new platform later (the payoff)
@@ -338,7 +338,7 @@ This section reflects the state after the post-migration UI/UX and backend-integ
 ### C.3 Storage robustness (screenshots/notes)
 
 - **Screenshots are downscaled** in `core/screenshot/capture.ts` to a 1280px longest edge (JPEG q≈0.6). Full 1080p/4K frames bloated IndexedDB fast — a handful could exhaust the quota and then *silently* block all further writes. Keep the cap.
-- **Writes never fail silently.** `useTimeline.addNote/addScreenshot` wrap the IndexedDB write in try/catch and surface a toast on failure; `NoteComposer` only clears the input after a successful save (so a failed write keeps the user's text). There is no cap on notes; screenshots remain capped at 40/video (`limitService`).
+- **Writes never fail silently.** `useTimeline.addNote/addScreenshot` wrap the IndexedDB write in try/catch and surface a toast on failure; `NoteComposer` only clears the input after a successful save (so a failed write keeps the user's text). Note length and notes/screenshots per video are capped by the user's plan (values fetched from the backend; oversized note input is trimmed with a toast, never rejected).
 
 ### C.4 Insights & PDF
 

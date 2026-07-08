@@ -551,6 +551,50 @@
   font-weight: 600;
 }
 
+/* ----- Sign-up prompt (guests opening AI features) ----- */
+.clipinsights__signupText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ci-muted);
+  margin: 0 4px 4px;
+}
+
+.clipinsights__btnPrimary,
+.clipinsights__btnSecondary {
+  min-width: 84px;
+  height: 36px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.clipinsights__btnPrimary {
+  border: none;
+  background-color: var(--ci-accent);
+  color: #fff;
+}
+
+.clipinsights__btnPrimary:hover {
+  background-color: var(--ci-accent-strong);
+}
+
+.clipinsights__btnSecondary {
+  border: 1px solid var(--ci-line);
+  background-color: var(--ci-surface);
+  color: var(--ci-ink);
+}
+
+.clipinsights__btnSecondary:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  border-color: var(--ci-accent-soft);
+}
+
 /* ----- Summary & Key Points ----- */
 #clipinsights__summaryHeader,
 #clipinsights__keyPointsHeader {

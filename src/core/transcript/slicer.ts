@@ -1,4 +1,5 @@
 import { fetchTokenLimit, type TokenLimit } from '@/core/api/client';
+import { getValidAccessToken } from '@/core/auth/session';
 import type { PlatformAdapter, TranscriptSegment, VideoContext } from '@/core/platform/types';
 import { getTranscript } from '@/core/transcript/transcriptCache';
 import { formatHMS } from '@/core/time';
@@ -45,7 +46,8 @@ export async function getSlicedTranscript(
   ctx: VideoContext,
 ): Promise<SlicedTranscript> {
   try {
-    const limit = await fetchTokenLimit();
+    // The budget is plan-based, so identify the caller when possible.
+    const limit = await fetchTokenLimit(await getValidAccessToken());
     const result = await getTranscript(adapter, ctx);
 
     if (!result.success || !result.data || result.data.length === 0) {

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchSummary } from '@/core/api/client';
+import { ApiAuthError, ApiLimitError, fetchSummary } from '@/core/api/client';
+import { getValidAccessToken } from '@/core/auth/session';
 import { parseKeypoints } from '@/core/format';
-import { summaryLimit } from '@/core/limits/limitService';
+import { getPlanInfo, invalidatePlanInfo } from '@/core/limits/limitService';
 import { getKeypoints, getSummary, saveKeypoints, saveSummary } from '@/core/storage/repository';
 import { getSlicedTranscript } from '@/core/transcript/slicer';
 import { usePlatform } from '@/ui/PlatformContext';
 import type { ContextState } from '@/ui/components/StatusBar';
 
-export type InsightsStatus = 'idle' | 'loading' | 'ready' | 'error' | 'limit';
+export type InsightsStatus = 'idle' | 'loading' | 'ready' | 'error' | 'limit' | 'signup';
 
 export interface UseInsights {
   summary: string | null;
@@ -22,6 +23,8 @@ export interface UseInsights {
   reset: () => void;
 }
 
+const SIGNUP_MESSAGE = 'AI summaries are free with an account. Sign up to unlock them.';
+
 function deriveContext(summaryText: string): string {
   const match = summaryText.match(/upto\s+([\d.]+)\s*minutes/i);
   return match ? `Context up to ${match[1]} min` : 'Full video context';
@@ -30,6 +33,7 @@ function deriveContext(summaryText: string): string {
 /**
  * Summary and Key Points are produced by a single backend call and cached
  * together in IndexedDB; this hook backs both views (ARCHITECTURE.md A.10).
+ * Limits are enforced by the backend; remaining counts come from the plan API.
  */
 export function useInsights(): UseInsights {
   const { adapter, ctx } = usePlatform();
@@ -39,7 +43,11 @@ export function useInsights(): UseInsights {
   const [message, setMessage] = useState('');
   const [contextText, setContextText] = useState('Analyzing video...');
   const [contextState, setContextState] = useState<ContextState>('normal');
-  const [remaining, setRemaining] = useState(() => summaryLimit.remaining());
+  const [remaining, setRemaining] = useState(0);
+
+  useEffect(() => {
+    void getPlanInfo().then((info) => setRemaining(info.usage?.summary.remaining ?? 0));
+  }, []);
 
   const loadFromDb = useCallback(async (): Promise<boolean> => {
     const [savedSummary, savedKeypoints] = await Promise.all([getSummary(ctx.contentId), getKeypoints(ctx.contentId)]);
@@ -63,12 +71,12 @@ export function useInsights(): UseInsights {
     // load effect hasn't resolved yet.
     if (await loadFromDb()) return;
 
-    setRemaining(summaryLimit.remaining());
-    if (summaryLimit.isReached()) {
-      setStatus('limit');
-      setContextText('Limit reached');
+    const token = await getValidAccessToken();
+    if (!token) {
+      setStatus('signup');
+      setContextText('Account required');
       setContextState('error');
-      setMessage('Your summary limit has been reached. Please try again tomorrow.');
+      setMessage(SIGNUP_MESSAGE);
       return;
     }
 
@@ -85,10 +93,11 @@ export function useInsights(): UseInsights {
       return;
     }
 
-    setRemaining(summaryLimit.consume());
-
     try {
-      const data = await fetchSummary(ctx.contentUrl, sliced.transcript);
+      const data = await fetchSummary(ctx.contentUrl, sliced.transcript, token);
+      invalidatePlanInfo();
+      void getPlanInfo().then((info) => setRemaining(info.usage?.summary.remaining ?? 0));
+
       if (!data.success) {
         setStatus('error');
         setContextState('error');
@@ -115,7 +124,22 @@ export function useInsights(): UseInsights {
       setSummary(finalSummary);
       setKeypoints(finalKeypoints);
       setStatus('ready');
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiAuthError) {
+        setStatus('signup');
+        setContextText('Account required');
+        setContextState('error');
+        setMessage(SIGNUP_MESSAGE);
+        return;
+      }
+      if (error instanceof ApiLimitError) {
+        setRemaining(0);
+        setStatus('limit');
+        setContextText('Limit reached');
+        setContextState('error');
+        setMessage(error.message);
+        return;
+      }
       setStatus('error');
       setContextState('error');
       setContextText('Error');
