@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { type AuthStatus, checkAuthStatus, login as sessionLogin, logout as sessionLogout, type LoginResult } from '@/core/auth/session';
+import { type AuthStatus, checkAuthStatus, googleLogin as sessionGoogleLogin, login as sessionLogin, logout as sessionLogout, type LoginResult } from '@/core/auth/session';
 
 export interface UseAuth {
   status: AuthStatus | 'unknown';
   login: (email: string, password: string) => Promise<LoginResult>;
+  googleLogin: () => Promise<LoginResult>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -28,10 +29,16 @@ export function useAuth(): UseAuth {
     [refresh],
   );
 
+  const googleLogin = useCallback(async () => {
+    const result = await sessionGoogleLogin();
+    if (result.ok) await refresh();
+    return result;
+  }, [refresh]);
+
   const logout = useCallback(() => {
     sessionLogout();
     setStatus('logged-out');
   }, []);
 
-  return { status, login, logout, refresh };
+  return { status, login, googleLogin, logout, refresh };
 }

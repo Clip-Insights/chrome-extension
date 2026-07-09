@@ -18,11 +18,16 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full design.
 npm install
 ```
 
-Environment is configured in `.env` (committed defaults) and can be overridden
-in `.env.local`:
+Environment is configured in `.env` (gitignored) and can be overridden in
+`.env.local`:
 
 - `VITE_API_URL` — backend base URL.
 - `VITE_TOKEN_SECRET` — obfuscation key for JWTs at rest (client-side only).
+- `VITE_GOOGLE_EXTENSION_CLIENT_ID` — OAuth client ID for extension Google
+  sign-in. Must be a **Web application** client (not "Chrome extension" —
+  that type only works with `getAuthToken`). Add this Authorized redirect URI
+  (extension ID from `chrome://extensions`):
+  `https://<your-extension-id>.chromiumapp.org/`
 
 ## Develop
 

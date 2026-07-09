@@ -90,7 +90,13 @@ export function Panel() {
         {view === 'summary' && <SummaryView insights={insights} onClose={() => setView('main')} />}
         {view === 'keypoints' && <KeyPointsView insights={insights} onClose={() => setView('main')} />}
         {view === 'chat' && <ChatView chat={chat} onClose={() => setView('main')} />}
-        {view === 'login' && <LoginView onLogin={auth.login} onBack={() => setView('main')} />}
+        {view === 'login' && (
+          <LoginView
+            onLogin={auth.login}
+            onGoogleLogin={auth.googleLogin}
+            onBack={() => setView('main')}
+          />
+        )}
       </div>
       <Toaster />
     </div>
