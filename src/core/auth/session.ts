@@ -1,4 +1,6 @@
-import { login as apiLogin, refreshAccessToken } from '@/core/api/client';
+import { login as apiLogin, googleLogin as apiGoogleLogin, refreshAccessToken } from '@/core/api/client';
+import { getGoogleIdToken } from '@/core/auth/googleLogin';
+import { GOOGLE_EXTENSION_CLIENT_ID } from '@/core/api/env';
 import { clearTokens, getToken, storeToken } from './tokenStore';
 
 export type AuthStatus = 'logged-in' | 'logged-out';
@@ -28,6 +30,26 @@ export async function login(email: string, password: string): Promise<LoginResul
     return { ok: true, message: 'Login successful' };
   } catch {
     return { ok: false, message: 'An error occurred while logging in. Please try again.' };
+  }
+}
+
+export async function googleLogin(): Promise<LoginResult> {
+  if (!GOOGLE_EXTENSION_CLIENT_ID) {
+    return { ok: false, message: 'Google sign-in is not configured for this build.' };
+  }
+  try {
+    const idToken = await getGoogleIdToken(GOOGLE_EXTENSION_CLIENT_ID);
+    const { ok, data } = await apiGoogleLogin(idToken);
+    if (!ok) {
+      const err = (data as { error?: string }).error;
+      return { ok: false, message: err ?? 'Google login failed.' };
+    }
+    await storeToken('access', data.token.access);
+    await storeToken('refresh', data.token.refresh);
+    return { ok: true, message: 'Login successful' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message.trim() : '';
+    return { ok: false, message: msg || 'Google sign-in failed. Please try again.' };
   }
 }
 
