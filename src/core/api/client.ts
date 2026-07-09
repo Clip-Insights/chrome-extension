@@ -1,4 +1,5 @@
 import { API_URL } from './env';
+import { decodeSseToken, splitSseEvents } from './sse';
 
 /** Token budget used to slice long transcripts before sending to the AI. */
 export interface TokenLimit {
@@ -90,6 +91,37 @@ function authHeaders(accessToken?: string | null): Record<string, string> {
   return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 }
 
+type TokenRefresher = () => Promise<string | null>;
+let tokenRefresher: TokenRefresher | null = null;
+
+/**
+ * Auth layer hook (set by core/auth/session): how to obtain a fresh access
+ * token after a 401. Registered as a callback to keep this module free of an
+ * import cycle with the session module.
+ */
+export function registerTokenRefresher(refresher: TokenRefresher): void {
+  tokenRefresher = refresher;
+}
+
+/**
+ * Authenticated fetch with the standard 401 recovery: if the access token is
+ * rejected (expired mid-flight, revoked), refresh once and retry the request.
+ */
+async function fetchWithAuth(url: string, init: RequestInit, accessToken: string): Promise<Response> {
+  const request = (token: string) =>
+    fetch(url, {
+      ...init,
+      headers: { ...(init.headers as Record<string, string> | undefined), ...authHeaders(token) },
+    });
+
+  let response = await request(accessToken);
+  if (response.status === 401 && tokenRefresher) {
+    const freshToken = await tokenRefresher();
+    if (freshToken) response = await request(freshToken);
+  }
+  return response;
+}
+
 /** Convert 401/429 responses into typed errors; return the response otherwise. */
 async function throwForLimitErrors(response: Response): Promise<Response> {
   if (response.status === 401) throw new ApiAuthError();
@@ -126,7 +158,7 @@ export async function fetchPlans(): Promise<PlanLimits[]> {
 /** The logged-in user's plan and live usage counters. */
 export async function fetchMyPlan(accessToken: string): Promise<MyPlanResponse> {
   const response = await throwForLimitErrors(
-    await fetch(`${API_URL}/api/plans/me/`, { headers: authHeaders(accessToken) }),
+    await fetchWithAuth(`${API_URL}/api/plans/me/`, {}, accessToken),
   );
   if (!response.ok) throw new Error('Failed to load plan');
   return response.json() as Promise<MyPlanResponse>;
@@ -158,11 +190,15 @@ export async function fetchSummary(
   accessToken: string,
 ): Promise<SummaryResponse> {
   const response = await throwForLimitErrors(
-    await fetch(`${API_URL}/api/textutils/summary/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
-      body: JSON.stringify({ youtube_url: contentUrl, transcription }),
-    }),
+    await fetchWithAuth(
+      `${API_URL}/api/textutils/summary/`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_url: contentUrl, transcription }),
+      },
+      accessToken,
+    ),
   );
   return response.json() as Promise<SummaryResponse>;
 }
@@ -170,11 +206,11 @@ export async function fetchSummary(
 export async function uploadPdf(blob: Blob, fileName: string, accessToken: string): Promise<{ ok: boolean; error?: string }> {
   const formData = new FormData();
   formData.append('file', blob, fileName);
-  const response = await fetch(`${API_URL}/api/userspace/files/`, {
-    method: 'POST',
-    headers: authHeaders(accessToken),
-    body: formData,
-  });
+  const response = await fetchWithAuth(
+    `${API_URL}/api/userspace/files/`,
+    { method: 'POST', body: formData },
+    accessToken,
+  );
   if (response.ok) return { ok: true };
   const result = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
   return { ok: false, error: result.message ?? result.error ?? 'Unknown error' };
@@ -197,24 +233,33 @@ export async function streamChat(
   accessToken: string,
 ): Promise<boolean> {
   const response = await throwForLimitErrors(
-    await fetch(`${API_URL}/api/textutils/chat/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
-      body: JSON.stringify(request),
-    }),
+    await fetchWithAuth(
+      `${API_URL}/api/textutils/chat/`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      },
+      accessToken,
+    ),
   );
   if (!response.ok || !response.body) throw new Error('Network response was not ok');
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let received = false;
+  // Events can straddle network reads, so buffer until a full `\n\n` boundary.
+  let buffer = '';
 
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
 
-    const chunk = decoder.decode(value);
-    for (const event of chunk.split('\n\n')) {
+    buffer += decoder.decode(value, { stream: true });
+    const { events, rest } = splitSseEvents(buffer);
+    buffer = rest;
+
+    for (const event of events) {
       if (!event.startsWith('data: ')) continue;
       const content = event.slice('data: '.length);
 
@@ -223,7 +268,7 @@ export async function streamChat(
         handlers.onError?.(content);
         continue;
       }
-      handlers.onToken(content);
+      handlers.onToken(decodeSseToken(content));
       received = true;
     }
   }

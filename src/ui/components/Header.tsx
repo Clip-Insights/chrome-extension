@@ -11,7 +11,7 @@ export function Header({ authStatus, onAuthClick }: HeaderProps) {
   const label = authStatus === 'logged-in' ? 'Logout' : 'Login';
   return (
     <div id="clipinsights__top-container">
-      <a href="https://clipinsights.vercel.app" target="_blank" rel="noreferrer" id="clipinsights__logo">
+      <a href="https://app.clipinsights.com" target="_blank" rel="noreferrer" id="clipinsights__logo">
         <div id="clipinsights__mainHeading">
           <span dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
           Clip Insights

@@ -468,6 +468,8 @@
 #clipinsights__loginContainer {
   text-align: center;
   justify-content: center;
+  /* Breathing room so the form doesn't touch the card edges. */
+  padding: 0 28px;
 }
 
 #clipinsights__loginContainer h4.clipinsights__h4 {
@@ -494,6 +496,37 @@
 
 #clipinsights__emailInput {
   margin-bottom: 12px;
+}
+
+/* Password input with an inline visibility toggle. */
+.clipinsights__passwordField {
+  position: relative;
+}
+
+.clipinsights__passwordField .clipinsights__loginInputs {
+  padding-right: 38px; /* keep typed text clear of the toggle */
+}
+
+.clipinsights__passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ci-muted);
+  cursor: pointer;
+}
+
+.clipinsights__passwordToggle:hover {
+  color: var(--ci-accent);
+  background-color: var(--ci-accent-soft);
 }
 
 #clipinsights__submitBackBtns {
@@ -552,11 +585,43 @@
 }
 
 /* ----- Sign-up prompt (guests opening AI features) ----- */
+.clipinsights__signupPrompt {
+  padding: 0 32px;
+}
+
 .clipinsights__signupText {
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--ci-muted);
-  margin: 0 4px 4px;
+  margin: 0 0 18px;
+}
+
+/* One clear hierarchy: primary CTA on top, secondary below, quiet exit last. */
+.clipinsights__signupActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.clipinsights__btnBlock {
+  width: 100%;
+}
+
+.clipinsights__btnGhost {
+  height: 32px;
+  margin-top: 2px;
+  border: none;
+  background: transparent;
+  color: var(--ci-muted);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9px;
+}
+
+.clipinsights__btnGhost:hover {
+  color: var(--ci-ink);
+  background-color: var(--ci-canvas);
 }
 
 .clipinsights__btnPrimary,

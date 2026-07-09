@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { WEB_APP_URL } from '@/core/api/env';
 import type { LoginResult } from '@/core/auth/session';
+import { EyeIcon, EyeOffIcon } from '@/ui/icons';
 import { useToast } from '@/ui/toast/ToastContext';
 
 interface LoginViewProps {
@@ -12,6 +13,7 @@ export function LoginView({ onLogin, onBack }: LoginViewProps) {
   const { show } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -33,14 +35,24 @@ export function LoginView({ onLogin, onBack }: LoginViewProps) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <input
-        type="password"
-        placeholder="Password"
-        className="clipinsights__loginInputs"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && void submit()}
-      />
+      <div className="clipinsights__passwordField">
+        <input
+          type={showPassword ? 'text' : 'password'}
+          placeholder="Password"
+          className="clipinsights__loginInputs"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && void submit()}
+        />
+        <button
+          type="button"
+          className="clipinsights__passwordToggle"
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          onClick={() => setShowPassword((visible) => !visible)}
+        >
+          {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
+      </div>
       <div id="clipinsights__submitBackBtns">
         <button className="clipinsights__button" id="clipinsights__submitLogin" disabled={busy} onClick={() => void submit()}>
           {busy ? 'Verifying' : 'Login'}
