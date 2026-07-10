@@ -29,10 +29,8 @@ function makePlan(overrides: Partial<PlanLimits> = {}): PlanLimits {
     monthly_price_usd: 0,
     daily_summaries: 5,
     daily_chat_messages: 15,
-    daily_transcriptions: 2,
     max_chat_query_chars: 1000,
     transcript_token_budget: 8000,
-    max_transcription_seconds: 300,
     storage_limit_mb: 100,
     max_file_size_mb: 10,
     max_note_chars: 1000,
@@ -48,7 +46,6 @@ function makeMyPlan(): MyPlanResponse {
     usage: {
       summary: { used: 1, limit: 5, remaining: 4 },
       chat: { used: 0, limit: 15, remaining: 15 },
-      transcription: { used: 0, limit: 2, remaining: 2 },
     },
   };
 }

@@ -41,10 +41,8 @@ export interface PlanLimits {
   monthly_price_usd: number;
   daily_summaries: number;
   daily_chat_messages: number;
-  daily_transcriptions: number;
   max_chat_query_chars: number;
   transcript_token_budget: number;
-  max_transcription_seconds: number;
   storage_limit_mb: number;
   max_file_size_mb: number;
   max_note_chars: number;
@@ -63,7 +61,6 @@ export interface MyPlanResponse {
   usage: {
     summary: UsageCounter;
     chat: UsageCounter;
-    transcription: UsageCounter;
   };
 }
 
