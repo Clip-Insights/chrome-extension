@@ -76,6 +76,12 @@ export function Panel() {
     [auth],
   );
 
+  const onGoogleLogin = useCallback(async () => {
+    const result = await auth.googleLogin();
+    if (result.ok) invalidatePlanInfo();
+    return result;
+  }, [auth]);
+
   // Keyboard shortcuts (Ctrl+Shift+…). Latest handlers are read via a ref so the
   // listener is attached once (ARCHITECTURE.md A.15).
   const actionsRef = useRef<Record<string, () => void>>({});
@@ -123,7 +129,9 @@ export function Panel() {
         {view === 'summary' && <SummaryView insights={insights} onClose={() => setView('main')} />}
         {view === 'keypoints' && <KeyPointsView insights={insights} onClose={() => setView('main')} />}
         {view === 'chat' && <ChatView chat={chat} onClose={() => setView('main')} />}
-        {view === 'login' && <LoginView onLogin={onLogin} onBack={() => setView('main')} />}
+        {view === 'login' && (
+          <LoginView onLogin={onLogin} onGoogleLogin={onGoogleLogin} onBack={() => setView('main')} />
+        )}
         {view === 'signup' && (
           <SignupPrompt feature={gatedFeature} onLogin={() => setView('login')} onBack={() => setView('main')} />
         )}

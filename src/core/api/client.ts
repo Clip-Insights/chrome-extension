@@ -173,6 +173,15 @@ export function login(email: string, password: string): Promise<{ ok: boolean; d
   }).then(async (r) => ({ ok: r.ok, data: (await r.json()) as LoginResponse }));
 }
 
+export function googleLogin(idToken: string): Promise<{ ok: boolean; data: LoginResponse }> {
+  return fetch(`${API_URL}/api/account/google-login/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: idToken }),
+    credentials: 'include',
+  }).then(async (r) => ({ ok: r.ok, data: (await r.json()) as LoginResponse }));
+}
+
 export async function refreshAccessToken(refresh: string): Promise<string | null> {
   const response = await fetch(`${API_URL}/api/account/refresh-token/`, {
     method: 'POST',

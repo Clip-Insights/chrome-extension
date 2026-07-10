@@ -36,6 +36,13 @@ export default defineManifest({
     default_title: 'Clip Insights',
   },
   host_permissions: PLATFORM_MATCHES,
+  permissions: ['identity'],
+  background: {
+    // Must not be named index.ts — CRXJS confuses it with content/index.ts and
+    // points service-worker-loader at the content bundle (window is not defined).
+    service_worker: 'src/background/sw.ts',
+    type: 'module',
+  },
   content_scripts: [
     {
       matches: PLATFORM_MATCHES,
