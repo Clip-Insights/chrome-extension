@@ -75,12 +75,10 @@ export function ChatIcon(): JSX.Element {
 }
 
 export function AddNoteIcon(): JSX.Element {
-  // Same pen glyph as EditIcon (just larger), so "write a note" and "edit a
-  // note" read as one family instead of the old boxed pencil-square.
   return (
     <Line>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
     </Line>
   );
 }

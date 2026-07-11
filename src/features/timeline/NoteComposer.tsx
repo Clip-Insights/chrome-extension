@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AddNoteIcon } from '@/ui/icons';
+import { BtnTooltip } from '@/ui/components/BtnTooltip';
 import { useToast } from '@/ui/toast/ToastContext';
 
 interface NoteComposerProps {
@@ -53,7 +54,7 @@ export function NoteComposer({ onAddNote, maxChars }: NoteComposerProps) {
       />
       <button className="clipinsights__button" id="clipinsights__addNoteBtn" onClick={() => void submit()}>
         <AddNoteIcon />
-        <span className="clipinsights__btnTooltip">Add note</span>
+        <BtnTooltip label="Add note" shortcut="Enter" />
       </button>
     </div>
   );

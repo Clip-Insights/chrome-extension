@@ -4,6 +4,7 @@ import type { UseExport } from '@/features/export/useExport';
 import type { UseTranscriptCopy } from '@/features/transcript/useTranscriptCopy';
 import { NoteComposer } from '@/features/timeline/NoteComposer';
 import { TimelineList } from '@/features/timeline/TimelineList';
+import { BtnTooltip } from '@/ui/components/BtnTooltip';
 import {
   ChatIcon,
   ClearIcon,
@@ -57,22 +58,22 @@ export function MainView({
         <button className="clipinsights__button" id="clipinsights__screenshotBtn" onClick={() => void timeline.addScreenshot()}>
           <SnapshotIcon />
           <span>Snapshot</span>
-          <span className="clipinsights__btnTooltip">Capture screenshot</span>
+          <BtnTooltip label="Capture screenshot" shortcut="Ctrl+Shift+S" />
         </button>
         <button className="clipinsights__button" id="clipinsights__summaryBtn" onClick={onOpenSummary}>
           <SummaryIcon />
           <span>Summary</span>
-          <span className="clipinsights__btnTooltip">Generate summary</span>
+          <BtnTooltip label="Generate summary" shortcut="Ctrl+Shift+Y" />
         </button>
         <button className="clipinsights__button" id="clipinsights__keypointsBtn" onClick={onOpenKeypoints}>
           <KeyPointsIcon />
           <span>Key Points</span>
-          <span className="clipinsights__btnTooltip">Extract key points</span>
+          <BtnTooltip label="Extract key points" shortcut="Ctrl+Shift+K" />
         </button>
         <button className="clipinsights__button" id="clipinsights__chatBtn" onClick={onOpenChat}>
           <ChatIcon />
           <span>Chat</span>
-          <span className="clipinsights__btnTooltip">Chat with AI</span>
+          <BtnTooltip label="Chat with AI" />
         </button>
       </div>
 
@@ -94,7 +95,7 @@ export function MainView({
         >
           <DownloadIcon />
           <span>{saving ? 'Saving...' : 'Download'}</span>
-          <span className="clipinsights__btnTooltip">Download as PDF</span>
+          <BtnTooltip label="Download as PDF" shortcut="Ctrl+Shift+P" />
         </button>
         <button
           className="clipinsights__button"
@@ -104,7 +105,7 @@ export function MainView({
         >
           <UploadIcon />
           <span>{uploading ? 'Uploading...' : 'Upload'}</span>
-          <span className="clipinsights__btnTooltip">Upload to Clip Insights</span>
+          <BtnTooltip label="Upload to Clip Insights" shortcut="Ctrl+Shift+U" />
         </button>
         <button
           className="clipinsights__button"
@@ -114,12 +115,12 @@ export function MainView({
         >
           <TranscriptIcon />
           <span>{transcriptLabel}</span>
-          <span className="clipinsights__btnTooltip">Copy transcript</span>
+          <BtnTooltip label="Copy transcript" shortcut="Ctrl+Shift+T" />
         </button>
         <button className="clipinsights__button" id="clipinsights__clearBtn" onClick={onClear}>
           <ClearIcon />
           <span>Clear</span>
-          <span className="clipinsights__btnTooltip">Clear all data</span>
+          <BtnTooltip label="Clear all data" shortcut="Ctrl+Shift+C" />
         </button>
       </div>
     </div>
