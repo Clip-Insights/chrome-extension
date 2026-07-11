@@ -138,28 +138,29 @@
 }
 
 .clipinsights__button-container {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 #clipinsights__loginBtnContainer {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
+/* Kept compact on purpose: every pixel saved here goes to the timeline. */
 .clipinsights__button-container > .clipinsights__button,
 #clipinsights__loginBtnContainer > .clipinsights__button {
   min-width: 0;
-  height: 56px;
-  padding: 7px 3px;
+  height: 44px;
+  padding: 5px 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
   border: 1px solid var(--ci-line);
-  border-radius: 10px;
+  border-radius: 9px;
   background-color: var(--ci-surface);
   color: var(--ci-ink);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -175,8 +176,8 @@
 .clipinsights__button-container > .clipinsights__button svg,
 #clipinsights__loginBtnContainer > .clipinsights__button svg {
   flex: 0 0 auto;
-  width: 19px;
-  height: 19px;
+  width: 15px;
+  height: 15px;
 }
 
 .clipinsights__button-container > .clipinsights__button:hover,
@@ -215,9 +216,11 @@
 /* ----- Note composer ----- */
 .clipinsights__input-container {
   display: flex;
-  align-items: flex-end;
+  /* The add button stays vertically centered against the input, even when
+   * the textarea grows to its second line. */
+  align-items: center;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   flex: 0 0 auto;
 }
 
@@ -261,20 +264,18 @@
   border: 1px solid var(--ci-line);
   border-radius: 9px;
   background-color: var(--ci-surface);
-}
-
-#clipinsights__addNoteBtn {
-  color: var(--ci-accent);
+  color: var(--ci-ink);
 }
 
 #clipinsights__addNoteBtn:hover {
   background-color: var(--ci-accent-soft);
   border-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
 }
 
 #clipinsights__addNoteBtn svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 
 /* ----- Timeline (notes + screenshots) ----- */
@@ -468,6 +469,8 @@
 #clipinsights__loginContainer {
   text-align: center;
   justify-content: center;
+  /* Breathing room so the form doesn't touch the card edges. */
+  padding: 0 28px;
 }
 
 #clipinsights__loginContainer h4.clipinsights__h4 {
@@ -479,7 +482,6 @@
 
 .clipinsights__googleBtn {
   width: 100%;
-  margin-bottom: 14px;
   height: 40px;
   display: inline-flex;
   align-items: center;
@@ -527,46 +529,59 @@
   margin-bottom: 12px;
 }
 
-#clipinsights__submitBackBtns {
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+/* Password input with an inline visibility toggle. */
+.clipinsights__passwordField {
+  position: relative;
 }
 
-#clipinsights__submitLogin,
-#clipinsights__backBtn {
-  width: 84px;
-  height: 36px;
+.clipinsights__passwordField .clipinsights__loginInputs {
+  padding-right: 38px; /* keep typed text clear of the toggle */
+}
+
+.clipinsights__passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9px;
-  font-size: 12px;
-  font-weight: 600;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ci-muted);
+  cursor: pointer;
+}
+
+.clipinsights__passwordToggle:hover {
+  color: var(--ci-accent);
+  background-color: var(--ci-accent-soft);
 }
 
 #clipinsights__submitLogin {
-  border: none;
-  background-color: var(--ci-accent);
-  color: #fff;
+  height: 40px;
+  margin-top: 14px;
 }
 
-#clipinsights__submitLogin:hover {
-  background-color: var(--ci-accent-strong);
+/* "or" separator between password login and Google sign-in. */
+.clipinsights__loginDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  color: var(--ci-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-#clipinsights__backBtn {
-  border: 1px solid var(--ci-line);
-  background-color: var(--ci-surface);
-  color: var(--ci-ink);
-}
-
-#clipinsights__backBtn:hover {
-  background-color: var(--ci-accent-soft);
-  color: var(--ci-accent);
-  border-color: var(--ci-accent-soft);
+.clipinsights__loginDivider::before,
+.clipinsights__loginDivider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--ci-line);
 }
 
 #clipinsights__registrationLink {
@@ -580,6 +595,82 @@
   color: var(--ci-accent);
   text-decoration: none;
   font-weight: 600;
+}
+
+/* ----- Sign-up prompt (guests opening AI features) ----- */
+.clipinsights__signupPrompt {
+  padding: 0 32px;
+}
+
+.clipinsights__signupText {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ci-muted);
+  margin: 0 0 18px;
+}
+
+/* One clear hierarchy: primary CTA on top, secondary below, quiet exit last. */
+.clipinsights__signupActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.clipinsights__btnBlock {
+  width: 100%;
+}
+
+.clipinsights__btnGhost {
+  height: 32px;
+  margin-top: 2px;
+  border: none;
+  background: transparent;
+  color: var(--ci-muted);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9px;
+}
+
+.clipinsights__btnGhost:hover {
+  color: var(--ci-ink);
+  background-color: var(--ci-canvas);
+}
+
+.clipinsights__btnPrimary,
+.clipinsights__btnSecondary {
+  min-width: 84px;
+  height: 36px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.clipinsights__btnPrimary {
+  border: none;
+  background-color: var(--ci-accent);
+  color: #fff;
+}
+
+.clipinsights__btnPrimary:hover {
+  background-color: var(--ci-accent-strong);
+}
+
+.clipinsights__btnSecondary {
+  border: 1px solid var(--ci-line);
+  background-color: var(--ci-surface);
+  color: var(--ci-ink);
+}
+
+.clipinsights__btnSecondary:hover {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  border-color: var(--ci-accent-soft);
 }
 
 /* ----- Summary & Key Points ----- */
@@ -821,6 +912,17 @@
 .clipinsights__button:hover .clipinsights__btnTooltip {
   opacity: 1;
   visibility: visible;
+}
+
+/* Keyboard shortcut chip inside a tooltip. */
+.clipinsights__btnShortcut {
+  margin-left: 6px;
+  padding: 1px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 9px;
+  opacity: 0.9;
 }
 
 /* Bottom-row tooltips open upward so they aren't clipped by the card edge. */

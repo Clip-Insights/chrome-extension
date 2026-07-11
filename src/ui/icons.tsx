@@ -77,8 +77,28 @@ export function ChatIcon(): JSX.Element {
 export function AddNoteIcon(): JSX.Element {
   return (
     <Line>
-      <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" />
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </Line>
+  );
+}
+
+export function EyeIcon(): JSX.Element {
+  return (
+    <Line size={15}>
+      <path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z" />
+      <circle cx="12" cy="12" r="3" />
+    </Line>
+  );
+}
+
+export function EyeOffIcon(): JSX.Element {
+  return (
+    <Line size={15}>
+      <path d="M10.7 5.17A9.8 9.8 0 0 1 12 5c4.64 0 8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7 10.66 10.66 0 0 1-1.67 2.68" />
+      <path d="M6.61 6.61A10.6 10.6 0 0 0 2.06 11.65a1 1 0 0 0 0 .7C3.42 15.9 7.36 19 12 19a9.9 9.9 0 0 0 5.39-1.61" />
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <path d="m3 3 18 18" />
     </Line>
   );
 }

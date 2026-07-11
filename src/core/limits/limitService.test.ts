@@ -1,16 +1,57 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ONE_DAY_MS } from '@/core/time';
+import type { MyPlanResponse, PlanLimits } from '@/core/api/client';
+
+vi.mock('@/core/api/client', () => ({
+  fetchMyPlan: vi.fn(),
+  fetchPlans: vi.fn(),
+}));
+vi.mock('@/core/auth/session', () => ({
+  getValidAccessToken: vi.fn(),
+}));
+
+import { fetchMyPlan, fetchPlans } from '@/core/api/client';
+import { getValidAccessToken } from '@/core/auth/session';
 import {
-  DailyLimit,
   decrementScreenshotCount,
+  getPlanInfo,
   getScreenshotCount,
   incrementScreenshotCount,
+  invalidatePlanInfo,
   limitTone,
   resetScreenshotCount,
 } from './limitService';
 
-// The limit service persists to localStorage, which the `node` test environment
-// doesn't provide; a tiny in-memory stub keeps the tests dependency-free.
+function makePlan(overrides: Partial<PlanLimits> = {}): PlanLimits {
+  return {
+    slug: 'free',
+    name: 'Free',
+    description: '',
+    monthly_price_usd: 0,
+    daily_summaries: 5,
+    daily_chat_messages: 15,
+    max_chat_query_chars: 1000,
+    transcript_token_budget: 8000,
+    storage_limit_mb: 100,
+    max_file_size_mb: 10,
+    max_note_chars: 1000,
+    max_notes_per_video: 100,
+    max_screenshots_per_video: 40,
+    ...overrides,
+  };
+}
+
+function makeMyPlan(): MyPlanResponse {
+  return {
+    plan: makePlan(),
+    usage: {
+      summary: { used: 1, limit: 5, remaining: 4 },
+      chat: { used: 0, limit: 15, remaining: 15 },
+    },
+  };
+}
+
+// The plan service persists nothing itself, but screenshot counters use
+// localStorage, which the `node` test environment doesn't provide.
 function installLocalStorage(): void {
   const store = new Map<string, string>();
   vi.stubGlobal('localStorage', {
@@ -23,55 +64,64 @@ function installLocalStorage(): void {
 
 beforeEach(() => {
   installLocalStorage();
+  invalidatePlanInfo();
+  vi.mocked(getValidAccessToken).mockReset();
+  vi.mocked(fetchMyPlan).mockReset();
+  vi.mocked(fetchPlans).mockReset();
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-describe('DailyLimit', () => {
-  it('starts at the configured maximum', () => {
-    const limit = new DailyLimit('k', 5);
-    expect(limit.remaining()).toBe(5);
-    expect(limit.isReached()).toBe(false);
+describe('getPlanInfo', () => {
+  it('returns the user plan with usage when logged in', async () => {
+    vi.mocked(getValidAccessToken).mockResolvedValue('token');
+    vi.mocked(fetchMyPlan).mockResolvedValue(makeMyPlan());
+
+    const info = await getPlanInfo();
+
+    expect(info.isGuest).toBe(false);
+    expect(info.limits.slug).toBe('free');
+    expect(info.usage?.summary.remaining).toBe(4);
   });
 
-  it('decrements on consume and reports remaining', () => {
-    const limit = new DailyLimit('k', 3);
-    expect(limit.consume()).toBe(2);
-    expect(limit.consume()).toBe(1);
-    expect(limit.remaining()).toBe(1);
+  it('returns the guest plan without usage when logged out', async () => {
+    vi.mocked(getValidAccessToken).mockResolvedValue(null);
+    vi.mocked(fetchPlans).mockResolvedValue([
+      makePlan({ slug: 'guest', daily_summaries: 0, max_note_chars: 500 }),
+      makePlan(),
+    ]);
+
+    const info = await getPlanInfo();
+
+    expect(info.isGuest).toBe(true);
+    expect(info.usage).toBeNull();
+    expect(info.limits.max_note_chars).toBe(500);
   });
 
-  it('reports reached and never goes negative', () => {
-    const limit = new DailyLimit('k', 2);
-    limit.consume();
-    limit.consume();
-    limit.consume();
-    expect(limit.isReached()).toBe(true);
-    expect(limit.remaining()).toBe(0);
+  it('caches the result until invalidated', async () => {
+    vi.mocked(getValidAccessToken).mockResolvedValue('token');
+    vi.mocked(fetchMyPlan).mockResolvedValue(makeMyPlan());
+
+    await getPlanInfo();
+    await getPlanInfo();
+    expect(fetchMyPlan).toHaveBeenCalledTimes(1);
+
+    invalidatePlanInfo();
+    await getPlanInfo();
+    expect(fetchMyPlan).toHaveBeenCalledTimes(2);
   });
 
-  it('resets after the 24h rolling window', () => {
-    const now = 1_000_000_000_000;
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
-    const limit = new DailyLimit('k', 5);
-    limit.consume();
-    expect(limit.remaining()).toBe(4);
+  it('falls back to guest defaults when the backend is unreachable', async () => {
+    vi.mocked(getValidAccessToken).mockResolvedValue(null);
+    vi.mocked(fetchPlans).mockRejectedValue(new Error('offline'));
 
-    nowSpy.mockReturnValue(now + ONE_DAY_MS + 1);
-    expect(limit.remaining()).toBe(5);
-  });
+    const info = await getPlanInfo();
 
-  it('keeps the count within the window', () => {
-    const now = 2_000_000_000_000;
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
-    const limit = new DailyLimit('k', 5);
-    limit.consume();
-
-    nowSpy.mockReturnValue(now + ONE_DAY_MS - 1);
-    expect(limit.remaining()).toBe(4);
+    expect(info.isGuest).toBe(true);
+    expect(info.limits.max_note_chars).toBe(500);
+    expect(info.limits.daily_summaries).toBe(0);
   });
 });
 

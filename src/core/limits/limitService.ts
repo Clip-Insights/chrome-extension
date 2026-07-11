@@ -1,61 +1,79 @@
-import { ONE_DAY_MS } from '@/core/time';
+import { fetchMyPlan, fetchPlans, type MyPlanResponse, type PlanLimits } from '@/core/api/client';
+import { getValidAccessToken } from '@/core/auth/session';
 
 /**
- * Unified quota service. Replaces v3's four overlapping limit systems with one
- * (ARCHITECTURE.md A.11 / B.5), preserving the same numbers and 24h windows.
- * The non-functional `clipinsights_daily_limit` system from v3 is dropped.
+ * Plan-driven quota service. Limits are defined and enforced on the backend;
+ * this module caches the caller's plan (guest plan when logged out) so the UI
+ * can show remaining counts and gate client-only features (notes, screenshots)
+ * with backend-managed values. Replaces the old localStorage daily counters.
  */
 
-interface DailyState {
-  count: number;
-  timestamp: number;
+export interface PlanInfo {
+  limits: PlanLimits;
+  /** Live usage counters; null when logged out (guests have no AI usage). */
+  usage: MyPlanResponse['usage'] | null;
+  isGuest: boolean;
 }
 
-/** A daily quota backed by localStorage with a rolling 24h reset. */
-export class DailyLimit {
-  constructor(
-    private readonly key: string,
-    readonly max: number,
-  ) {}
+/** Used only when the backend is unreachable, mirroring the seeded guest plan. */
+const OFFLINE_FALLBACK: PlanInfo = {
+  limits: {
+    slug: 'guest',
+    name: 'Guest',
+    description: '',
+    monthly_price_usd: 0,
+    daily_summaries: 0,
+    daily_chat_messages: 0,
+    max_chat_query_chars: 0,
+    transcript_token_budget: 0,
+    storage_limit_mb: 0,
+    max_file_size_mb: 0,
+    max_note_chars: 500,
+    max_notes_per_video: 10,
+    max_screenshots_per_video: 10,
+  },
+  usage: null,
+  isGuest: true,
+};
 
-  private read(): DailyState {
-    const raw = localStorage.getItem(this.key);
-    const now = Date.now();
-    if (raw) {
-      const state = JSON.parse(raw) as DailyState;
-      if (now - state.timestamp <= ONE_DAY_MS) return state;
-    }
-    return { count: 0, timestamp: now };
-  }
+const PLAN_CACHE_TTL_MS = 60_000;
 
-  private write(state: DailyState): void {
-    localStorage.setItem(this.key, JSON.stringify(state));
-  }
+let cached: { info: PlanInfo; fetchedAt: number } | null = null;
+let inflight: Promise<PlanInfo> | null = null;
 
-  remaining(): number {
-    return Math.max(0, this.max - this.read().count);
+async function loadPlanInfo(): Promise<PlanInfo> {
+  const token = await getValidAccessToken();
+  if (token) {
+    const { plan, usage } = await fetchMyPlan(token);
+    return { limits: plan, usage, isGuest: false };
   }
-
-  isReached(): boolean {
-    return this.read().count >= this.max;
-  }
-
-  /** Record one use; returns the remaining count afterwards. */
-  consume(): number {
-    const state = this.read();
-    state.count += 1;
-    this.write(state);
-    return Math.max(0, this.max - state.count);
-  }
+  const plans = await fetchPlans();
+  const guest = plans.find((p) => p.slug === 'guest');
+  if (!guest) throw new Error('Guest plan missing from catalogue');
+  return { limits: guest, usage: null, isGuest: true };
 }
 
-/** Shared by Summary and Key Points (one backend call serves both). */
-export const summaryLimit = new DailyLimit('yt-player-bandwidth-performance', 5);
-export const chatLimit = new DailyLimit('yt-chat-limit', 10);
+/** The caller's plan limits and usage, cached briefly to keep the UI snappy. */
+export async function getPlanInfo(): Promise<PlanInfo> {
+  if (cached && Date.now() - cached.fetchedAt < PLAN_CACHE_TTL_MS) return cached.info;
+  inflight ??= loadPlanInfo()
+    .then((info) => {
+      cached = { info, fetchedAt: Date.now() };
+      return info;
+    })
+    .catch(() => cached?.info ?? OFFLINE_FALLBACK)
+    .finally(() => {
+      inflight = null;
+    });
+  return inflight;
+}
 
-// --- Per-content screenshot cap -----------------------------------------
+/** Drop the cache (after consuming a quota, logging in/out, or a 401/429). */
+export function invalidatePlanInfo(): void {
+  cached = null;
+}
 
-export const SCREENSHOT_LIMIT_PER_CONTENT = 40;
+// --- Per-content screenshot cap (client-side feature; value comes from the plan) ---
 
 const screenshotKey = (contentId: string) => `${contentId}_screenshotCount`;
 

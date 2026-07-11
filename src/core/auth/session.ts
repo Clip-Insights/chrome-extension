@@ -1,4 +1,4 @@
-import { login as apiLogin, googleLogin as apiGoogleLogin, refreshAccessToken } from '@/core/api/client';
+import { login as apiLogin, googleLogin as apiGoogleLogin, refreshAccessToken, registerTokenRefresher } from '@/core/api/client';
 import { getGoogleIdToken } from '@/core/auth/googleLogin';
 import { GOOGLE_EXTENSION_CLIENT_ID } from '@/core/api/env';
 import { clearTokens, getToken, storeToken } from './tokenStore';
@@ -10,12 +10,16 @@ export interface LoginResult {
   message: string;
 }
 
-/** Decode a JWT's `exp` claim and report whether it has passed. */
+// Treat tokens as expired slightly early so a token that would lapse mid-flight
+// is refreshed before the request, not after a 401. Matters with 5-min tokens.
+const EXPIRY_BUFFER_MS = 30_000;
+
+/** Decode a JWT's `exp` claim and report whether it has (nearly) passed. */
 export function isTokenExpired(token: string | null): boolean {
   if (!token) return true;
   try {
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return Date.now() >= payload.exp * 1000;
+    return Date.now() >= payload.exp * 1000 - EXPIRY_BUFFER_MS;
   } catch {
     return true;
   }
@@ -87,3 +91,7 @@ export async function getValidAccessToken(): Promise<string | null> {
 export function logout(): void {
   clearTokens();
 }
+
+// Let the API client recover from a 401 mid-session (token revoked or expired
+// despite the proactive check) by refreshing once and retrying the request.
+registerTokenRefresher(async () => ((await tryRefresh()) ? getToken('access') : null));
