@@ -117,7 +117,7 @@ All persisted records are keyed by a **normalized video URL**: `https://www.yout
 
 ### A.10 AI features — Summary, Key Points, Chat
 
-All call the Django backend at `API_URL` (`https://clipinsights-241407463290.europe-west1.run.app`; local `http://127.0.0.1:8000` commented out).
+All call the Django backend at `API_URL` (`https://clipinsights-159611886407.europe-west1.run.app`; local `http://127.0.0.1:8000` commented out).
 
 - **Summary** (`showSummary`/`getSummary`, button `#clipinsights__summaryBtn`, shortcut Ctrl+Shift+Y; hide Ctrl+Shift+H):
   - If a saved summary+keypoints exist for the video → render from IndexedDB (no API call).
@@ -291,7 +291,7 @@ clip-insights-ext-<react>/
 - **Screenshot capture moves into the content script.** v3 routed canvas-from-`<video>` through the background SW via `chrome.scripting.executeScript`, but that injected function ran in the same isolated world the content script already has, and YouTube media is same-origin (MSE blob URLs) so the canvas is not tainted. Capturing directly (`core/screenshot` using the adapter's `getVideoElement()`) removes the SW, the messaging round-trip, and the `scripting` permission (KISS/YAGNI). No background service worker is needed.
 - **Storage schema frozen** at the current shape (A.5) for data continuity; access is wrapped in a typed repository per content type.
 - **`API_URL` and `ENCRYPTION_KEY`** move to build-time env (`.env` / `import.meta.env`) with documented dev/prod separation; behaviour unchanged.
-- **Limits are plan-driven (v4.1).** `core/limits/limitService.ts` no longer keeps localStorage daily counters; AI quotas are enforced by the backend (401/429 with a structured body) and the service caches the caller's plan from `GET /api/plans/me/` (guest plan from `GET /api/plans/` when logged out). Client-only limits (note length, notes/video, screenshots/video) use the plan's values; only the per-video screenshot *count* is still tracked locally. Guests opening AI views get a `SignupPrompt` (`Panel.openAiView`).
+- **Limits are plan-driven (v4.1).** `core/limits/limitService.ts` no longer keeps localStorage daily counters; AI quotas are enforced by the backend (401/429 with a structured body) and the service caches the caller's plan from `GET /api/plans/me/` (guest plan from `GET /api/plans/` when logged out). Client-only limits (note length, notes/video, screenshots/video) use the plan's values; only the per-video screenshot *count* is still tracked locally. Guests opening AI views get a `SignupPrompt` (`Panel.openAiView`). Limit 429s carry `resets_at` (UTC ISO); `core/api/client.ts` appends a reset phrase in the viewer's timezone (`core/time.formatResetTime`) to the error message shown in chat/insights.
 - **Dead code dropped:** `popup.js`, `pdfobject.min.js`, the legacy `localStorage` note/screenshot helpers, the inline `<style>` block.
 
 ### B.6 Adding a new platform later (the payoff)

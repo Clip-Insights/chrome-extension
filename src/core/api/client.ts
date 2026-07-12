@@ -1,3 +1,4 @@
+import { formatResetTime } from '@/core/time';
 import { API_URL } from './env';
 import { decodeSseToken, splitSseEvents } from './sse';
 
@@ -54,6 +55,8 @@ export interface UsageCounter {
   used: number;
   limit: number;
   remaining: number;
+  /** UTC ISO time when `used` next decreases (rolling 24h window); null while unused. */
+  resets_at: string | null;
 }
 
 export interface MyPlanResponse {
@@ -78,6 +81,8 @@ export class ApiLimitError extends Error {
     message: string,
     readonly reason: string,
     readonly cta: string,
+    /** When the rolling window returns an allowance; null when waiting doesn't help. */
+    readonly resetsAt: Date | null = null,
   ) {
     super(message);
     this.name = 'ApiLimitError';
@@ -127,12 +132,14 @@ async function throwForLimitErrors(response: Response): Promise<Response> {
       message?: string;
       reason?: string;
       cta?: string;
+      resets_at?: string | null;
     };
-    throw new ApiLimitError(
-      body.message ?? 'You have reached your plan limit. Please try again later.',
-      body.reason ?? 'limit_exceeded',
-      body.cta ?? 'upgrade',
-    );
+    const parsed = body.resets_at ? new Date(body.resets_at) : null;
+    const resetsAt = parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+    let message = body.message ?? 'You have reached your plan limit. Please try again later.';
+    // The backend sends UTC; the phrase renders in the viewer's timezone.
+    if (resetsAt) message += ` Your limit resets ${formatResetTime(resetsAt)}.`;
+    throw new ApiLimitError(message, body.reason ?? 'limit_exceeded', body.cta ?? 'upgrade', resetsAt);
   }
   return response;
 }

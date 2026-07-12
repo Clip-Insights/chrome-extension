@@ -1,6 +1,6 @@
 {
   "name": "clip-insights-ext",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Clip Insights: capture video screenshots, timestamped notes, AI summaries, key points, and chat across learning platforms.",
   "type": "module",
   "scripts": {

@@ -44,8 +44,8 @@ function makeMyPlan(): MyPlanResponse {
   return {
     plan: makePlan(),
     usage: {
-      summary: { used: 1, limit: 5, remaining: 4 },
-      chat: { used: 0, limit: 15, remaining: 15 },
+      summary: { used: 1, limit: 5, remaining: 4, resets_at: null },
+      chat: { used: 0, limit: 15, remaining: 15, resets_at: null },
     },
   };
 }
