@@ -3,9 +3,10 @@ import { ApiAuthError, ApiLimitError, fetchSummary } from '@/core/api/client';
 import { getValidAccessToken } from '@/core/auth/session';
 import { parseKeypoints } from '@/core/format';
 import { getPlanInfo, invalidatePlanInfo } from '@/core/limits/limitService';
-import { getKeypoints, getSummary, saveKeypoints, saveSummary } from '@/core/storage/repository';
+import { deleteInsights, getKeypoints, getSummary, saveKeypoints, saveSummary } from '@/core/storage/repository';
 import { getSlicedTranscript } from '@/core/transcript/slicer';
 import { usePlatform } from '@/ui/PlatformContext';
+import { useToast } from '@/ui/toast/ToastContext';
 import type { ContextState } from '@/ui/components/StatusBar';
 
 export type InsightsStatus = 'idle' | 'loading' | 'ready' | 'error' | 'limit' | 'signup';
@@ -20,6 +21,10 @@ export interface UseInsights {
   remaining: number;
   /** Generate (or display cached) summary + key points. Safe to call repeatedly. */
   generate: () => Promise<void>;
+  /** Discard the cached result and generate fresh (the old one may be poor). */
+  regenerate: () => Promise<void>;
+  /** Delete the cached summary + key points and return to the idle state. */
+  clear: () => Promise<void>;
   reset: () => void;
 }
 
@@ -34,14 +39,18 @@ function deriveContext(summaryText: string): string {
  * Summary and Key Points are produced by a single backend call and cached
  * together in IndexedDB; this hook backs both views (ARCHITECTURE.md A.10).
  * Limits are enforced by the backend; remaining counts come from the plan API.
+ * Generation is explicit: views show a Generate button and call `generate()`
+ * only on the user's click (never automatically), plus `regenerate`/`clear`
+ * to replace or drop a cached result.
  */
 export function useInsights(): UseInsights {
   const { adapter, ctx } = usePlatform();
+  const { show } = useToast();
   const [summary, setSummary] = useState<string | null>(null);
   const [keypoints, setKeypoints] = useState<string[]>([]);
   const [status, setStatus] = useState<InsightsStatus>('idle');
   const [message, setMessage] = useState('');
-  const [contextText, setContextText] = useState('Analyzing video...');
+  const [contextText, setContextText] = useState('Ready when you are');
   const [contextState, setContextState] = useState<ContextState>('normal');
   const [remaining, setRemaining] = useState(0);
 
@@ -65,12 +74,8 @@ export function useInsights(): UseInsights {
     void loadFromDb();
   }, [loadFromDb]);
 
-  const generate = useCallback(async () => {
-    if (status === 'ready' || status === 'loading') return;
-    // Re-check the cache to avoid a network call (and quota spend) if the initial
-    // load effect hasn't resolved yet.
-    if (await loadFromDb()) return;
-
+  /** The network generation flow (no cache checks — callers decide). */
+  const runGeneration = useCallback(async () => {
     const token = await getValidAccessToken();
     if (!token) {
       setStatus('signup');
@@ -145,16 +150,58 @@ export function useInsights(): UseInsights {
       setContextText('Error');
       setMessage('An error occurred while fetching the summary.');
     }
-  }, [adapter, ctx, status, loadFromDb]);
+  }, [adapter, ctx]);
+
+  const generate = useCallback(async () => {
+    if (status === 'ready' || status === 'loading') return;
+    // Re-check the cache to avoid a network call (and quota spend) if the initial
+    // load effect hasn't resolved yet.
+    if (await loadFromDb()) return;
+    await runGeneration();
+  }, [status, loadFromDb, runGeneration]);
+
+  const clearStored = useCallback(async () => {
+    await deleteInsights(ctx.contentId);
+    setSummary(null);
+    setKeypoints([]);
+    setMessage('');
+  }, [ctx.contentId]);
+
+  const regenerate = useCallback(async () => {
+    if (status === 'loading') return;
+    try {
+      await clearStored();
+    } catch (error) {
+      console.error('Failed to clear cached insights', error);
+      show('Could not discard the previous result. Please try again.', 'error');
+      return;
+    }
+    await runGeneration();
+  }, [status, clearStored, runGeneration, show]);
+
+  const clear = useCallback(async () => {
+    if (status === 'loading') return;
+    try {
+      await clearStored();
+    } catch (error) {
+      console.error('Failed to clear cached insights', error);
+      show('Could not clear the saved result. Please try again.', 'error');
+      return;
+    }
+    setStatus('idle');
+    setContextText('Ready when you are');
+    setContextState('normal');
+    show('Summary and key points cleared.', 'success');
+  }, [status, clearStored, show]);
 
   const reset = useCallback(() => {
     setSummary(null);
     setKeypoints([]);
     setStatus('idle');
     setMessage('');
-    setContextText('Analyzing video...');
+    setContextText('Ready when you are');
     setContextState('normal');
   }, []);
 
-  return { summary, keypoints, status, message, contextText, contextState, remaining, generate, reset };
+  return { summary, keypoints, status, message, contextText, contextState, remaining, generate, regenerate, clear, reset };
 }

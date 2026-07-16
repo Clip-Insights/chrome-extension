@@ -51,6 +51,13 @@ export interface PlanLimits {
   max_screenshots_per_video: number;
 }
 
+/** The logged-in user's account details (`GET /api/account/profile/`). */
+export interface UserProfile {
+  id: number;
+  email: string;
+  name: string;
+}
+
 export interface UsageCounter {
   used: number;
   limit: number;
@@ -166,6 +173,14 @@ export async function fetchMyPlan(accessToken: string): Promise<MyPlanResponse> 
   );
   if (!response.ok) throw new Error('Failed to load plan');
   return response.json() as Promise<MyPlanResponse>;
+}
+
+export async function fetchProfile(accessToken: string): Promise<UserProfile> {
+  const response = await throwForLimitErrors(
+    await fetchWithAuth(`${API_URL}/api/account/profile/`, {}, accessToken),
+  );
+  if (!response.ok) throw new Error('Failed to load profile');
+  return response.json() as Promise<UserProfile>;
 }
 
 export function login(email: string, password: string): Promise<{ ok: boolean; data: LoginResponse }> {

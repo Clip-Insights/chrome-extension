@@ -74,7 +74,8 @@
 #clipinsights__summaryContainer,
 #clipinsights__keypointsContainer,
 #clipinsights__chatContainer,
-#clipinsights__loginContainer {
+#clipinsights__loginContainer,
+#clipinsights__settingsContainer {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -330,12 +331,28 @@
   font-size: 13px;
   color: var(--ci-text);
   margin: 0 0 4px;
+  /* Preserve the line breaks the user typed with Shift+Enter. */
+  white-space: pre-wrap;
 }
 
+/* Timestamp badge — a button: clicking it seeks the video to that time. */
 .clipinsights__timestamp {
+  display: inline-block;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 600;
   color: var(--ci-accent);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.clipinsights__timestamp:hover {
+  color: var(--ci-accent-strong);
+  text-decoration: underline;
 }
 
 /* Screenshot delete button */
@@ -357,9 +374,9 @@
 .clipinsights__delete-btn {
   background: rgba(255, 255, 255, 0.85);
   border: none;
-  border-radius: 6px;
-  width: 22px;
-  height: 22px;
+  border-radius: 5px;
+  width: 17px;
+  height: 17px;
   cursor: pointer;
   padding: 0;
   display: flex;
@@ -370,9 +387,22 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+.clipinsights__delete-btn svg {
+  width: 9px;
+  height: 9px;
+}
+
 .clipinsights__delete-btn:hover {
   background-color: #fee2e2;
   color: #dc2626;
+}
+
+/* The delete button hugs the screenshot's right edge; right-align its tooltip
+ * so it can't be clipped by the panel boundary. */
+.clipinsights__delete-btn .clipinsights__btnTooltip {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 /* Note options: three-dots button + Edit/Delete menu */
@@ -673,56 +703,104 @@
   border-color: var(--ci-accent-soft);
 }
 
-/* ----- Summary & Key Points ----- */
-#clipinsights__summaryHeader,
-#clipinsights__keyPointsHeader {
+/* ----- Compact view header (summary / key points / chat / settings) -----
+ * Kept low (~30px) so the scrollable content region gets the panel's height. */
+.clipinsights__viewHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 7px;
+  margin-bottom: 8px;
   flex: 0 0 auto;
 }
 
-#clipinsights__summaryHeading,
-#clipinsights__keypointsHeading {
-  display: flex;
+.clipinsights__viewIcon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ci-ink);
+  justify-content: center;
+  border-radius: 7px;
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  flex: 0 0 auto;
 }
 
-#clipinsights__closeKeyPoints,
-#clipinsights__closeSummary,
-#clipinsights__closeChat {
-  background: none;
+.clipinsights__viewIcon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.clipinsights__viewTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ci-ink);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clipinsights__viewActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+/* Small square icon button used in view headers (regenerate / clear / close). */
+.clipinsights__iconBtn {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
+  border-radius: 7px;
+  background: transparent;
   color: var(--ci-muted);
-  font-size: 15px;
-  line-height: 1;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-#clipinsights__closeKeyPoints:hover,
-#clipinsights__closeSummary:hover,
-#clipinsights__closeChat:hover {
+.clipinsights__iconBtn:hover {
   background-color: var(--ci-accent-soft);
   color: var(--ci-accent);
+}
+
+.clipinsights__iconBtn--danger:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.clipinsights__iconBtn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.clipinsights__iconBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Header icon-button tooltips sit near the card's right edge; right-align them
+ * so they can't be clipped by the panel boundary. */
+.clipinsights__viewActions .clipinsights__btnTooltip {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 #clipinsights__keypoints,
 #clipinsights__summary {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 14px;
+  padding: 12px 14px;
   border-radius: 10px;
   background-color: var(--ci-canvas);
   border: 1px solid var(--ci-line);
-  border-left: 4px solid var(--ci-accent);
   font-size: 13px;
   line-height: 1.6;
   color: var(--ci-text);
@@ -791,7 +869,7 @@
 }
 
 #clipinsights__chatStatusBar {
-  margin: 10px 0;
+  margin: 0 0 8px;
 }
 
 .clipinsights__contextInfo,
@@ -931,26 +1009,33 @@
   bottom: calc(100% + 6px);
 }
 
+/* Keep tooltips inside the panel: a centred tooltip on an edge button would
+ * overflow the card and get clipped, so the first column left-aligns and the
+ * last column right-aligns its tooltip. */
+.clipinsights__button-container > .clipinsights__button:first-child .clipinsights__btnTooltip,
+#clipinsights__loginBtnContainer > .clipinsights__button:first-child .clipinsights__btnTooltip {
+  left: 0;
+  transform: none;
+}
+
+.clipinsights__button-container > .clipinsights__button:last-child .clipinsights__btnTooltip,
+#clipinsights__loginBtnContainer > .clipinsights__button:last-child .clipinsights__btnTooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/* Same for controls that hug the panel's right edge. */
+#clipinsights__loginBtn .clipinsights__btnTooltip,
+#clipinsights__addNoteBtn .clipinsights__btnTooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
 /* ----- Chat ----- */
 #clipinsights__chatContainer {
   background-color: var(--ci-surface);
-}
-
-#clipinsights__chatHeader {
-  background-color: var(--ci-accent-soft);
-  color: var(--ci-ink);
-  padding: 10px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 10px;
-  flex: 0 0 auto;
-}
-
-#clipinsights__chatHeader .clipinsights__h4 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ci-ink);
 }
 
 #clipinsights__chatMessages {
@@ -987,6 +1072,8 @@
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
+  /* Preserve line breaks typed with Shift+Enter. */
+  white-space: pre-wrap;
 }
 
 .clipinsights__message.clipinsights__bot {
@@ -994,6 +1081,13 @@
   color: var(--ci-text);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
+}
+
+/* Answers with wide markdown (tables, code) get the full row so the content
+ * scrolls inside its block instead of being squeezed. */
+.clipinsights__message.clipinsights__bot:has(table),
+.clipinsights__message.clipinsights__bot:has(pre) {
+  max-width: 100%;
 }
 
 /* "Thinking" indicator: three bouncing dots shown in the bot bubble while we
@@ -1057,44 +1151,77 @@
 
 #clipinsights__chatInputContainer {
   display: flex;
+  align-items: flex-end;
   gap: 8px;
   padding-top: 10px;
   flex: 0 0 auto;
 }
 
+/* Multi-line composer: Enter sends, Shift+Enter adds a line. Grows with the
+ * content up to ~3 lines (field-sizing), then scrolls (scrollbar hidden). */
 #clipinsights__chatInput {
   flex: 1 1 auto;
   padding: 9px 11px;
   border: 1.5px solid var(--ci-line);
   border-radius: 9px;
   font-size: 13px;
+  line-height: 1.4;
   font-family: inherit;
+  color: var(--ci-text);
   outline: none;
+  resize: none;
+  field-sizing: content;
+  min-height: 38px;
+  max-height: 74px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#clipinsights__chatInput::-webkit-scrollbar {
+  display: none;
+}
+
+#clipinsights__chatInput::placeholder {
+  color: var(--ci-muted);
 }
 
 #clipinsights__chatInput:focus {
   border-color: var(--ci-accent);
 }
 
+/* Round icon-only send button, pinned to the composer's bottom edge. */
 #clipinsights__sendChatBtn {
   flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--ci-accent);
   color: #fff;
   border: none;
-  border-radius: 9px;
+  border-radius: 10px;
   cursor: pointer;
-  padding: 0 16px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 0;
 }
 
-#clipinsights__sendChatBtn:hover {
+#clipinsights__sendChatBtn:hover:not(:disabled) {
   background-color: var(--ci-accent-strong);
 }
 
 #clipinsights__sendChatBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* Send tooltip must open upward (input row is at the panel's bottom edge) and
+ * right-aligned so it stays inside the panel. */
+#clipinsights__sendChatBtn .clipinsights__btnTooltip {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 /* ----- Toasts ----- */
@@ -1144,4 +1271,431 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ----- Markdown (AI content: chat answers & summaries) -----
+ * The LLM emits GitHub-flavoured markdown; these rules style every component
+ * it produces (bold, lists, tables, code blocks, blockquotes, headings).
+ * Selectors are prefixed with the panel id so they beat the UA-margin resets.
+ * `display: contents` lets the streaming caret sit inline after the last
+ * paragraph instead of dropping to its own line. */
+#clip-insights-notepad .clipinsights__md {
+  display: contents;
+}
+
+#clip-insights-notepad .clipinsights__md > p:last-child {
+  display: inline;
+}
+
+#clip-insights-notepad .clipinsights__md p {
+  margin: 0 0 7px;
+}
+
+#clip-insights-notepad .clipinsights__md > :last-child {
+  margin-bottom: 0;
+}
+
+#clip-insights-notepad .clipinsights__md h1,
+#clip-insights-notepad .clipinsights__md h2,
+#clip-insights-notepad .clipinsights__md h3,
+#clip-insights-notepad .clipinsights__md h4,
+#clip-insights-notepad .clipinsights__md h5,
+#clip-insights-notepad .clipinsights__md h6 {
+  margin: 10px 0 4px;
+  font-weight: 700;
+  color: var(--ci-ink);
+  line-height: 1.35;
+}
+
+#clip-insights-notepad .clipinsights__md h1,
+#clip-insights-notepad .clipinsights__md h2 {
+  font-size: 13.5px;
+}
+
+#clip-insights-notepad .clipinsights__md h3,
+#clip-insights-notepad .clipinsights__md h4,
+#clip-insights-notepad .clipinsights__md h5,
+#clip-insights-notepad .clipinsights__md h6 {
+  font-size: 12.5px;
+}
+
+#clip-insights-notepad .clipinsights__md > h1:first-child,
+#clip-insights-notepad .clipinsights__md > h2:first-child,
+#clip-insights-notepad .clipinsights__md > h3:first-child,
+#clip-insights-notepad .clipinsights__md > h4:first-child {
+  margin-top: 0;
+}
+
+#clip-insights-notepad .clipinsights__md strong {
+  font-weight: 700;
+  color: var(--ci-ink);
+}
+
+#clip-insights-notepad .clipinsights__md a {
+  color: var(--ci-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#clip-insights-notepad .clipinsights__md a:hover {
+  text-decoration: underline;
+}
+
+#clip-insights-notepad .clipinsights__md ul,
+#clip-insights-notepad .clipinsights__md ol {
+  margin: 4px 0 7px;
+  padding-left: 18px;
+}
+
+#clip-insights-notepad .clipinsights__md ul {
+  list-style: disc;
+}
+
+#clip-insights-notepad .clipinsights__md ol {
+  list-style: decimal;
+}
+
+#clip-insights-notepad .clipinsights__md li {
+  margin-bottom: 3px;
+}
+
+#clip-insights-notepad .clipinsights__md li::marker {
+  color: var(--ci-accent);
+}
+
+#clip-insights-notepad .clipinsights__md li > ul,
+#clip-insights-notepad .clipinsights__md li > ol {
+  margin: 3px 0 0;
+}
+
+#clip-insights-notepad .clipinsights__md code {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+  font-size: 11.5px;
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent-strong);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Fenced code blocks: dark card, horizontal scroll instead of overflow. */
+#clip-insights-notepad .clipinsights__md pre {
+  margin: 6px 0 8px;
+  padding: 9px 11px;
+  background-color: var(--ci-ink);
+  border-radius: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+
+#clip-insights-notepad .clipinsights__md pre code {
+  display: block;
+  background: none;
+  color: #e7e8f0;
+  padding: 0;
+  border-radius: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+/* Blockquote — the accent side line. */
+#clip-insights-notepad .clipinsights__md blockquote {
+  margin: 6px 0 8px;
+  padding: 2px 4px 2px 10px;
+  border-left: 3px solid var(--ci-accent);
+  color: var(--ci-muted);
+}
+
+#clip-insights-notepad .clipinsights__md hr {
+  margin: 8px 0;
+  border: none;
+  border-top: 1px solid var(--ci-line);
+}
+
+/* Tables: real grid styling; wide tables scroll horizontally in place. */
+#clip-insights-notepad .clipinsights__md table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 6px 0 8px;
+  font-size: 12px;
+  scrollbar-width: thin;
+}
+
+#clip-insights-notepad .clipinsights__md th,
+#clip-insights-notepad .clipinsights__md td {
+  border: 1px solid var(--ci-line);
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+#clip-insights-notepad .clipinsights__md td {
+  white-space: normal;
+}
+
+#clip-insights-notepad .clipinsights__md th {
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-ink);
+  font-weight: 700;
+}
+
+#clip-insights-notepad .clipinsights__md tbody tr:nth-child(even) {
+  background-color: var(--ci-surface);
+}
+
+/* ----- Insights (summary / key points) states ----- */
+.clipinsights__insightsEmpty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+  padding: 10px;
+}
+
+.clipinsights__insightsEmptyIcon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  margin-bottom: 3px;
+}
+
+.clipinsights__insightsEmptyIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.clipinsights__insightsEmptyTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ci-ink);
+}
+
+.clipinsights__insightsEmptyText {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ci-muted);
+  max-width: 240px;
+}
+
+.clipinsights__insightsEmpty .clipinsights__btnPrimary {
+  margin-top: 8px;
+}
+
+.clipinsights__insightsLoading {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ci-muted);
+}
+
+.clipinsights__spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 2px solid var(--ci-line);
+  border-top-color: var(--ci-accent);
+  border-radius: 50%;
+  animation: clipinsights-spin 0.8s linear infinite;
+}
+
+@keyframes clipinsights-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ----- Settings ----- */
+#clipinsights__settingsBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ci-accent) transparent;
+}
+
+#clipinsights__settingsBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+#clipinsights__settingsBody::-webkit-scrollbar-thumb {
+  background-color: var(--ci-accent);
+  border-radius: 20px;
+}
+
+.clipinsights__settingsCard {
+  flex: 0 0 auto;
+  background-color: var(--ci-canvas);
+  border: 1px solid var(--ci-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.clipinsights__profileCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clipinsights__avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--ci-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.clipinsights__profileMeta {
+  min-width: 0;
+}
+
+.clipinsights__profileName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ci-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clipinsights__profileEmail {
+  font-size: 11.5px;
+  color: var(--ci-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clipinsights__settingsCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.clipinsights__settingsCardTitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ci-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.clipinsights__planBadge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background-color: var(--ci-accent-soft);
+  color: var(--ci-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.clipinsights__settingsCardText {
+  font-size: 12.5px;
+  color: var(--ci-text);
+  margin-bottom: 4px;
+}
+
+.clipinsights__settingsLink {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ci-accent);
+  text-decoration: none;
+}
+
+.clipinsights__settingsLink:hover {
+  text-decoration: underline;
+}
+
+.clipinsights__usageMeter {
+  margin-top: 8px;
+}
+
+.clipinsights__usageMeter:first-of-type {
+  margin-top: 4px;
+}
+
+.clipinsights__usageMeterHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--ci-text);
+  margin-bottom: 4px;
+}
+
+.clipinsights__usageMeterCount {
+  font-weight: 600;
+  color: var(--ci-muted);
+}
+
+.clipinsights__usageTrack {
+  height: 5px;
+  border-radius: 999px;
+  background-color: var(--ci-line);
+  overflow: hidden;
+}
+
+.clipinsights__usageFill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--ci-accent);
+  transition: width 0.2s ease;
+}
+
+.clipinsights__usageFill.full {
+  background-color: #dc2626;
+}
+
+.clipinsights__usageReset {
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--ci-muted);
+}
+
+.clipinsights__logoutBtn {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  width: 100%;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background-color: var(--ci-surface);
+  color: #dc2626;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.clipinsights__logoutBtn:hover {
+  background-color: #fee2e2;
 }

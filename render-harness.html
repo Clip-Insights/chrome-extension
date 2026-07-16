@@ -45,12 +45,17 @@
         <g id="i-transcript" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 11h3"/><path d="M7 15h2"/><path d="M14 11h3"/><path d="M13 15h4"/></g>
         <g id="i-clear" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-.8 13a2 2 0 0 1-2 1.9H7.8a2 2 0 0 1-2-1.9L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></g>
         <g id="i-login" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></g>
+        <g id="i-logout" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></g>
         <g id="i-add" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></g>
         <g id="i-eye" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></g>
         <g id="i-more" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></g>
         <g id="i-close" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g>
         <g id="i-info" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></g>
         <g id="i-bolt"><path d="M13 2 4.5 13.2a.6.6 0 0 0 .5.9H11l-1 7.9 8.5-11.9a.6.6 0 0 0-.5-1H13l1-7.1Z" fill="currentColor"/></g>
+        <g id="i-send" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 9-18 9 4-9-4-9Z"/><path d="M7 12h14"/></g>
+        <g id="i-settings" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></g>
+        <g id="i-refresh" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></g>
+        <g id="i-sparkles" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2.5M12 18.5V21M4.2 4.2l1.8 1.8M18 18l1.8 1.8M3 12h2.5M18.5 12H21M4.2 19.8 6 18M18 6l1.8-1.8"/><circle cx="12" cy="12" r="3.5"/></g>
       </defs>
     </svg>
 
@@ -59,10 +64,24 @@
       const ic = (id, w = 19) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none"><use href="#${id}"/></svg>`;
       const SHOT = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#2b2f52"/><circle cx="160" cy="78" r="34" fill="#5663c9"/><rect x="60" y="130" width="200" height="10" rx="5" fill="#454b86"/></svg>');
 
-      function header() {
+      function header(loggedIn = false) {
+        const icon = loggedIn ? ic('i-settings',14) : ic('i-login',14);
+        const label = loggedIn ? 'Settings' : 'Login';
         return `<div id="clipinsights__top-container">
           <a id="clipinsights__logo"><div id="clipinsights__mainHeading">${LOGO}Clip Insights</div></a>
-          <button id="clipinsights__loginBtn" class="clipinsights__button">${ic('i-login',14)}<span>Login</span></button>
+          <button id="clipinsights__loginBtn" class="clipinsights__button">${icon}<span>${label}</span></button>
+        </div>`;
+      }
+      // Compact view header shared by summary / key points / chat / settings.
+      function viewHeader(iconId, title, withInsightActions = false) {
+        const actions = withInsightActions
+          ? `<button class="clipinsights__iconBtn">${ic('i-refresh',13)}</button>
+             <button class="clipinsights__iconBtn clipinsights__iconBtn--danger">${ic('i-clear',13)}</button>`
+          : '';
+        return `<div class="clipinsights__viewHeader">
+          <span class="clipinsights__viewIcon">${ic(iconId,13)}</span>
+          <h2 class="clipinsights__viewTitle">${title}</h2>
+          <div class="clipinsights__viewActions">${actions}<button class="clipinsights__iconBtn">${ic('i-close',13)}</button></div>
         </div>`;
       }
       function topActions() {
@@ -90,19 +109,20 @@
       function timeline() {
         return `<div id="clipinsights__screenshotNoteContainer">
           <div class="clipinsights__screenshot-note">
-            <div class="clipinsights__note-actions"><button class="clipinsights__delete-btn">${ic('i-close',12)}</button></div>
+            <div class="clipinsights__note-actions"><button class="clipinsights__delete-btn">${ic('i-close',9)}</button></div>
             <img class="clipinsights__screenshot" src="${SHOT}" alt="frame"/>
-            <p class="clipinsights__timestamp">12:04</p>
+            <button class="clipinsights__timestamp">12:04</button>
           </div>
           <div class="clipinsights__screenshot-note">
             <div class="clipinsights__note-menu"><button class="clipinsights__note-menu-btn">${ic('i-more',14)}</button></div>
-            <p class="clipinsights__note">This is where the author explains the .claude directory and how subagents are configured.</p>
-            <p class="clipinsights__timestamp">13:20</p>
+            <p class="clipinsights__note">This is where the author explains the .claude directory.
+And this second line was added with Shift+Enter.</p>
+            <button class="clipinsights__timestamp">13:20</button>
           </div>
           <div class="clipinsights__screenshot-note">
             <div class="clipinsights__note-menu"><button class="clipinsights__note-menu-btn">${ic('i-more',14)}</button></div>
             <p class="clipinsights__note">Nice to have this — plan mode walkthrough starts here.</p>
-            <p class="clipinsights__timestamp">15:58</p>
+            <button class="clipinsights__timestamp">15:58</button>
           </div>
         </div>`;
       }
@@ -112,38 +132,72 @@
           <div class="clipinsights__limitBadge">${ic('i-bolt',10)}<span class="clipinsights__limitCount">4</span></div>
         </div>`;
       }
+      function chatComposer() {
+        return `<div id="clipinsights__chatInputContainer">
+          <textarea id="clipinsights__chatInput" rows="1" placeholder="Ask about this video…"></textarea>
+          <button class="clipinsights__button" id="clipinsights__sendChatBtn">${ic('i-send',16)}</button>
+        </div>`;
+      }
+
+      // Markdown answer mirroring core/markdown.ts output (marked + DOMPurify).
+      const MD_ANSWER = `<div class="clipinsights__md">
+        <p>He covers <strong>three main areas</strong> in the first hour:</p>
+        <ul><li>Setting up the <code>CLAUDE.md</code> project brain</li><li>Building a small web app live</li><li>Plan mode &amp; permissions</li></ul>
+        <table><thead><tr><th>Section</th><th>Time</th></tr></thead><tbody><tr><td>Setup</td><td>0:00–12:30</td></tr><tr><td>Live build</td><td>12:30–41:00</td></tr></tbody></table>
+        <blockquote><p>"Learn by doing, not by watching."</p></blockquote>
+        <pre><code>npm install
+npm run dev</code></pre>
+        <p>After that he moves on to hooks and slash commands</p>
+      </div><span class="clipinsights__caret"></span>`;
 
       const panels = {
         Main: `<div id="clipinsights__body">${header()}<div id="clipinsights__mainContent">${topActions()}${noteComposer()}${timeline()}${bottomActions()}</div></div>`,
 
-        'Chat — streaming': `<div id="clipinsights__body">${header()}<div id="clipinsights__chatContainer">
-          <div id="clipinsights__chatHeader"><h4 class="clipinsights__h4">Clip Bot</h4><button class="clipinsights__button" id="clipinsights__closeChat">✖</button></div>
+        'Chat — markdown streaming': `<div id="clipinsights__body">${header(true)}<div id="clipinsights__chatContainer">
+          ${viewHeader('i-chat','Clip Bot')}
           ${statusBar('Context up to 41.20 min')}
           <div id="clipinsights__chatMessages">
-            <div class="clipinsights__message clipinsights__user">What does he cover in the first hour?</div>
-            <div class="clipinsights__message clipinsights__bot">In the first hour he sets up the project brain (the cloud.md file), then builds a small web app live to show practical workflows<span class="clipinsights__caret"></span></div>
+            <div class="clipinsights__message clipinsights__user">What does he cover in the first hour?
+Also: any tables?</div>
+            <div class="clipinsights__message clipinsights__bot">${MD_ANSWER}</div>
           </div>
-          <div id="clipinsights__chatInputContainer"><input id="clipinsights__chatInput" placeholder="Type a message..."/><button class="clipinsights__button" id="clipinsights__sendChatBtn">Send</button></div>
+          ${chatComposer()}
         </div></div>`,
 
-        'Chat — thinking': `<div id="clipinsights__body">${header()}<div id="clipinsights__chatContainer">
-          <div id="clipinsights__chatHeader"><h4 class="clipinsights__h4">Clip Bot</h4><button class="clipinsights__button" id="clipinsights__closeChat">✖</button></div>
+        'Chat — thinking': `<div id="clipinsights__body">${header(true)}<div id="clipinsights__chatContainer">
+          ${viewHeader('i-chat','Clip Bot')}
           ${statusBar('Context up to 41.20 min')}
           <div id="clipinsights__chatMessages">
             <div class="clipinsights__message clipinsights__user">Summarize the section on hooks.</div>
             <div class="clipinsights__message clipinsights__bot"><span class="clipinsights__typing"><span></span><span></span><span></span></span></div>
           </div>
-          <div id="clipinsights__chatInputContainer"><input id="clipinsights__chatInput" placeholder="Type a message..."/><button class="clipinsights__button" id="clipinsights__sendChatBtn">Send</button></div>
+          ${chatComposer()}
         </div></div>`,
 
-        Summary: `<div id="clipinsights__body">${header()}<div id="clipinsights__summaryContainer">
-          <div id="clipinsights__summaryHeader"><h2 id="clipinsights__summaryHeading">📄Summary</h2><button class="clipinsights__button" id="clipinsights__closeSummary">✖</button></div>
+        Summary: `<div id="clipinsights__body">${header(true)}<div id="clipinsights__summaryContainer">
+          ${viewHeader('i-summary','Summary', true)}
           ${statusBar('Full video context')}
-          <div id="clipinsights__summary"><strong>Overview.</strong> This course is a practical, build-first walkthrough of Claude Code. It opens by getting everyone on the same page, then sets up the project brain — the cloud.md file — before building a small web app that is hosted live. The instructor emphasizes learning by doing rather than passively watching. Later sections cover the cloud directory, the subagents folder, plan mode, dangerously-skip-permissions and how to use it safely, context management to avoid context rot, every slash command, and hooks for firing custom scripts automatically.</div>
+          <div id="clipinsights__summary"><div class="clipinsights__md">
+            <p><strong>Overview.</strong> This course is a practical, build-first walkthrough of Claude Code. It opens by getting everyone on the same page, then sets up the project brain — the <code>CLAUDE.md</code> file — before building a small web app that is hosted live.</p>
+            <p>Later sections cover the cloud directory, the subagents folder, plan mode, permissions and how to use them safely, context management to avoid context rot, every slash command, and hooks for firing custom scripts automatically.</p>
+          </div></div>
         </div></div>`,
 
-        'Key Points': `<div id="clipinsights__body">${header()}<div id="clipinsights__keypointsContainer">
-          <div id="clipinsights__keyPointsHeader"><h2 id="clipinsights__keypointsHeading">🔹Key Points</h2><button class="clipinsights__button" id="clipinsights__closeKeyPoints">✖</button></div>
+        'Summary — empty (generate)': `<div id="clipinsights__body">${header(true)}<div id="clipinsights__summaryContainer">
+          ${viewHeader('i-summary','Summary')}
+          ${statusBar('Ready when you are')}
+          <div id="clipinsights__summary">
+            <div class="clipinsights__insightsEmpty">
+              <span class="clipinsights__insightsEmptyIcon">${ic('i-sparkles',18)}</span>
+              <p class="clipinsights__insightsEmptyTitle">No summary yet</p>
+              <p class="clipinsights__insightsEmptyText">Generate an AI summary of this video from its transcript. It's saved here for next time.</p>
+              <button class="clipinsights__btnPrimary">Generate summary</button>
+            </div>
+          </div>
+        </div></div>`,
+
+        'Key Points': `<div id="clipinsights__body">${header(true)}<div id="clipinsights__keypointsContainer">
+          ${viewHeader('i-keypoints','Key Points', true)}
           ${statusBar('Full video context')}
           <div id="clipinsights__keypoints"><ul class="styled-keypoints">
             <li>Set up the project brain (cloud.md) before building anything substantial.</li>
@@ -152,6 +206,38 @@
             <li>Manage context deliberately to avoid context rot and keep prompts high-ROI.</li>
             <li>Hooks let you fire custom scripts automatically at defined lifecycle points.</li>
           </ul></div>
+        </div></div>`,
+
+        Settings: `<div id="clipinsights__body">${header(true)}<div id="clipinsights__settingsContainer">
+          ${viewHeader('i-settings','Settings')}
+          <div id="clipinsights__settingsBody">
+            <div class="clipinsights__settingsCard clipinsights__profileCard">
+              <span class="clipinsights__avatar">Z</span>
+              <div class="clipinsights__profileMeta">
+                <p class="clipinsights__profileName">Zubair Ahmed</p>
+                <p class="clipinsights__profileEmail">ds.zubair@example.com</p>
+              </div>
+            </div>
+            <div class="clipinsights__settingsCard">
+              <div class="clipinsights__settingsCardHead"><h3 class="clipinsights__settingsCardTitle">Plan</h3><span class="clipinsights__planBadge">Pro</span></div>
+              <p class="clipinsights__settingsCardText">$4.99/month</p>
+              <a class="clipinsights__settingsLink">Manage plan ↗</a>
+            </div>
+            <div class="clipinsights__settingsCard">
+              <div class="clipinsights__settingsCardHead"><h3 class="clipinsights__settingsCardTitle">Today's usage</h3></div>
+              <div class="clipinsights__usageMeter">
+                <div class="clipinsights__usageMeterHead"><span>Summaries &amp; key points</span><span class="clipinsights__usageMeterCount">3 / 20</span></div>
+                <div class="clipinsights__usageTrack"><div class="clipinsights__usageFill" style="width:15%"></div></div>
+                <p class="clipinsights__usageReset">Resets in about 4 hours</p>
+              </div>
+              <div class="clipinsights__usageMeter">
+                <div class="clipinsights__usageMeterHead"><span>Chat messages</span><span class="clipinsights__usageMeterCount">40 / 40</span></div>
+                <div class="clipinsights__usageTrack"><div class="clipinsights__usageFill full" style="width:100%"></div></div>
+                <p class="clipinsights__usageReset">Resets in about 2 hours</p>
+              </div>
+            </div>
+            <button class="clipinsights__logoutBtn">${ic('i-logout',14)}Log out</button>
+          </div>
         </div></div>`,
 
         Login: `<div id="clipinsights__body">${header()}<div id="clipinsights__loginContainer">

@@ -10,13 +10,14 @@ import { KeyPointsView } from '@/features/insights/KeyPointsView';
 import { useChat } from '@/features/chat/useChat';
 import { ChatView } from '@/features/chat/ChatView';
 import { useExport } from '@/features/export/useExport';
+import { SettingsView } from '@/features/settings/SettingsView';
 import { useTranscriptCopy } from '@/features/transcript/useTranscriptCopy';
 import { Header } from '@/ui/components/Header';
 import { MainView } from '@/ui/components/MainView';
 import { Toaster } from '@/ui/toast/Toaster';
 import { useToast } from '@/ui/toast/ToastContext';
 
-type View = 'main' | 'summary' | 'keypoints' | 'chat' | 'login' | 'signup';
+type View = 'main' | 'summary' | 'keypoints' | 'chat' | 'login' | 'signup' | 'settings';
 
 const AI_FEATURE_LABEL: Partial<Record<View, string>> = {
   summary: 'AI summaries',
@@ -56,15 +57,17 @@ export function Panel() {
     [auth.status],
   );
 
+  // Logged-in users get the settings view (profile, plan, usage, logout);
+  // guests go straight to login.
   const onAuthClick = useCallback(() => {
-    if (auth.status === 'logged-in') {
-      auth.logout();
-      invalidatePlanInfo();
-      setView('main');
-      show('Successfully logged out.', 'success');
-    } else {
-      setView('login');
-    }
+    setView(auth.status === 'logged-in' ? 'settings' : 'login');
+  }, [auth.status]);
+
+  const onLogout = useCallback(() => {
+    auth.logout();
+    invalidatePlanInfo();
+    setView('main');
+    show('Successfully logged out.', 'success');
   }, [auth, show]);
 
   const onLogin = useCallback(
@@ -135,6 +138,7 @@ export function Panel() {
         {view === 'signup' && (
           <SignupPrompt feature={gatedFeature} onLogin={() => setView('login')} onBack={() => setView('main')} />
         )}
+        {view === 'settings' && <SettingsView onClose={() => setView('main')} onLogout={onLogout} />}
       </div>
       <Toaster />
     </div>

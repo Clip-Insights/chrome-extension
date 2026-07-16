@@ -8,9 +8,10 @@ interface NoteItemProps {
   note: NoteRecord;
   onEdit: (id: number, text: string) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  onSeek: (seconds: number) => void;
 }
 
-export function NoteItem({ note, onEdit, onDelete }: NoteItemProps) {
+export function NoteItem({ note, onEdit, onDelete, onSeek }: NoteItemProps) {
   const { show } = useToast();
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -94,7 +95,13 @@ export function NoteItem({ note, onEdit, onDelete }: NoteItemProps) {
         <p className="clipinsights__note">{note.text}</p>
       )}
 
-      <p className="clipinsights__timestamp">{formatHMS(note.videoTimestamp)}</p>
+      <button
+        className="clipinsights__timestamp"
+        onClick={() => onSeek(note.videoTimestamp)}
+        aria-label="Jump video to this time"
+      >
+        {formatHMS(note.videoTimestamp)}
+      </button>
     </div>
   );
 }
