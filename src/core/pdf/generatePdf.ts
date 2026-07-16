@@ -2,6 +2,8 @@ import { jsPDF } from 'jspdf';
 import { LOGO_SVG, WEB_STORE_URL } from '@/assets/logo';
 import type { TimelineItem } from '@/core/types';
 import { formatHMS } from '@/core/time';
+import { markdownToPlainText } from '@/core/markdown';
+import { segmentRuns, splitParagraphs, tokenizeWords, type TextRun } from './richText';
 
 export interface PdfInput {
   title: string;
@@ -34,6 +36,86 @@ const T = { brand: 15, title: 15, section: 9.5, body: 10, lead: 10.5, caption: 8
 
 const PAGE = { margin: 18, footer: 16 };
 const LEADING = 5.2; // body line height in mm
+const PT_TO_MM = 25.4 / 72;
+
+/**
+ * Font stack the browser uses to draw characters jsPDF's standard fonts can't
+ * encode (emoji, CJK, arrows, any non-CP-1252 script). The generic families at
+ * the end let the OS fall back to whatever covers the script.
+ */
+const GLYPH_FONT_STACK =
+  '"Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Symbol", sans-serif';
+
+/** Oversampling factor for glyph images so they stay crisp in the PDF. */
+const GLYPH_SCALE = 4;
+
+interface GlyphImage {
+  dataUrl: string;
+  widthMm: number;
+  heightMm: number;
+  /** Distance from the image top to the text baseline, in mm. */
+  ascentMm: number;
+}
+
+/**
+ * Renders non-CP-1252 runs (emoji, other scripts, symbols) to small PNGs via
+ * a canvas, letting the browser's text stack do shaping and font fallback.
+ * Results are cached per (value, size, color) — repeated emoji cost one render.
+ */
+class GlyphRenderer {
+  private measureCtx = document.createElement('canvas').getContext('2d')!;
+  private cache = new Map<string, GlyphImage>();
+
+  measureWidthMm(value: string, sizePt: number): number {
+    this.measureCtx.font = `${sizePt}px ${GLYPH_FONT_STACK}`;
+    return this.measureCtx.measureText(value).width * PT_TO_MM;
+  }
+
+  render(value: string, sizePt: number, color: RGB): GlyphImage {
+    const key = `${sizePt}|${color.join(',')}|${value}`;
+    const cached = this.cache.get(key);
+    if (cached) return cached;
+
+    const px = sizePt * GLYPH_SCALE;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    ctx.font = `${px}px ${GLYPH_FONT_STACK}`;
+    const metrics = ctx.measureText(value);
+    // Fall back to em-box fractions when actual bounds are missing (rare).
+    const ascent = Math.ceil(metrics.actualBoundingBoxAscent || px * 0.8);
+    const descent = Math.ceil(metrics.actualBoundingBoxDescent || px * 0.25);
+    const pad = Math.ceil(px * 0.05);
+    canvas.width = Math.max(1, Math.ceil(metrics.width) + pad * 2);
+    canvas.height = Math.max(1, ascent + descent + pad * 2);
+
+    // Setting canvas dimensions resets context state; set the font again.
+    ctx.font = `${px}px ${GLYPH_FONT_STACK}`;
+    ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(value, pad, ascent + pad);
+
+    const toMm = (v: number) => (v / GLYPH_SCALE) * PT_TO_MM;
+    const image: GlyphImage = {
+      dataUrl: canvas.toDataURL('image/png'),
+      widthMm: toMm(canvas.width),
+      heightMm: toMm(canvas.height),
+      ascentMm: toMm(ascent + pad),
+    };
+    this.cache.set(key, image);
+    return image;
+  }
+}
+
+/** One measured segment of a laid-out line. */
+interface RichSeg {
+  run: TextRun;
+  width: number;
+}
+
+interface RichLine {
+  segs: RichSeg[];
+  width: number;
+}
 
 /** Render an SVG string to a high-DPI PNG data URL. */
 function svgToPng(svg: string, size: number): Promise<string> {
@@ -89,6 +171,7 @@ export async function generatePdf(input: PdfInput): Promise<PdfOutput> {
   const contentW = right - left;
   const bottomLimit = pageH - PAGE.footer;
   const logoPng = await svgToPng(LOGO_SVG, 24);
+  const glyphs = new GlyphRenderer();
 
   let y = PAGE.margin;
   let page = 1;
@@ -120,19 +203,109 @@ export async function generatePdf(input: PdfInput): Promise<PdfOutput> {
     if (y + needed > bottomLimit) newPage();
   };
 
+  // --- Unicode-safe rich text -------------------------------------------
+  // CP-1252 runs are typeset as real PDF text; anything else (emoji, other
+  // scripts, symbols) is browser-rendered via GlyphRenderer and embedded as an
+  // inline image, so no character can corrupt the line (see richText.ts).
+
+  const measureRun = (run: TextRun, sizePt: number): number =>
+    run.kind === 'text' ? doc.getTextWidth(run.value) : glyphs.measureWidthMm(run.value, sizePt);
+
+  /** Wrap `text` into lines of measured segments that fit `maxWidth`. */
+  const layoutRich = (text: string, maxWidth: number, sizePt: number, style: 'normal' | 'bold'): RichLine[] => {
+    setText(sizePt, C.body, style); // font must be current for getTextWidth
+    const lines: RichLine[] = [];
+    const spaceW = doc.getTextWidth(' ');
+
+    for (const paragraph of splitParagraphs(text)) {
+      let cur: RichLine = { segs: [], width: 0 };
+      const flush = () => {
+        lines.push(cur);
+        cur = { segs: [], width: 0 };
+      };
+      const append = (seg: RichSeg) => {
+        if (cur.width > 0 && cur.width + seg.width > maxWidth) flush();
+        cur.segs.push(seg);
+        cur.width += seg.width;
+      };
+
+      const words = tokenizeWords(paragraph);
+      for (const word of words) {
+        const segs: RichSeg[] = word.runs.map((run) => ({ run, width: measureRun(run, sizePt) }));
+        const wordW = segs.reduce((sum, s) => sum + s.width, 0);
+
+        if (wordW > maxWidth) {
+          // A word wider than the column (URL, long emoji chain): break by cluster.
+          if (cur.width > 0) append({ run: { kind: 'text', value: ' ' }, width: spaceW });
+          for (const seg of segs) {
+            for (const cluster of segmentRuns(seg.run.value)) {
+              append({ run: { kind: seg.run.kind, value: cluster.value }, width: measureRun(cluster, sizePt) });
+            }
+          }
+          continue;
+        }
+        if (cur.width > 0 && cur.width + spaceW + wordW > maxWidth) flush();
+        if (cur.width > 0) {
+          cur.segs.push({ run: { kind: 'text', value: ' ' }, width: spaceW });
+          cur.width += spaceW;
+        }
+        for (const seg of segs) {
+          cur.segs.push(seg);
+          cur.width += seg.width;
+        }
+      }
+      // Keep blank paragraphs as empty lines so intentional breaks survive.
+      if (cur.segs.length > 0 || words.length === 0) lines.push(cur);
+    }
+    return lines;
+  };
+
   /**
-   * Draw pre-wrapped lines, re-applying the text style on every line. This is
+   * Draw laid-out lines, re-applying the text style on every line. This is
    * deliberate: a mid-block page break runs footer(), which leaves the font at
    * the small grey caption style — without re-applying here, text that spills
    * onto the next page would render in the wrong size/colour.
    */
-  const drawLines = (lines: string[], x: number, size: number, color: RGB, style: 'normal' | 'bold' = 'normal') => {
+  const drawRichLines = (
+    lines: RichLine[],
+    x: number,
+    sizePt: number,
+    color: RGB,
+    style: 'normal' | 'bold' = 'normal',
+    opts: { link?: string; leading?: number } = {},
+  ) => {
+    const leading = opts.leading ?? LEADING;
     for (const line of lines) {
-      ensureSpace(LEADING);
-      setText(size, color, style);
-      doc.text(line, x, y);
-      y += LEADING;
+      ensureSpace(leading);
+      setText(sizePt, color, style);
+      let cx = x;
+      for (const seg of line.segs) {
+        if (seg.run.kind === 'text') {
+          doc.text(seg.run.value, cx, y);
+        } else {
+          const image = glyphs.render(seg.run.value, sizePt, color);
+          doc.addImage(image.dataUrl, 'PNG', cx, y - image.ascentMm, image.widthMm, image.heightMm);
+        }
+        cx += seg.width;
+      }
+      if (opts.link && line.width > 0) {
+        const textH = sizePt * PT_TO_MM;
+        doc.link(x, y - textH, line.width, textH + 1, { url: opts.link });
+      }
+      y += leading;
     }
+  };
+
+  const richParagraph = (
+    text: string,
+    sizePt = T.body,
+    color = C.body,
+    opts: { x?: number; width?: number; style?: 'normal' | 'bold'; link?: string; leading?: number } = {},
+  ) => {
+    const x = opts.x ?? left;
+    const width = opts.width ?? right - x;
+    const style = opts.style ?? 'normal';
+    drawRichLines(layoutRich(text, width, sizePt, style), x, sizePt, color, style, opts);
   };
 
   const sectionHeader = (label: string) => {
@@ -144,10 +317,6 @@ export async function generatePdf(input: PdfInput): Promise<PdfOutput> {
     doc.setLineWidth(0.3);
     doc.line(left, y, right, y);
     y += 6.5;
-  };
-
-  const paragraph = (text: string, size = T.body, color = C.body) => {
-    drawLines(doc.splitTextToSize(text, contentW) as string[], left, size, color);
   };
 
   const timestampPill = (seconds: number) => {
@@ -169,21 +338,25 @@ export async function generatePdf(input: PdfInput): Promise<PdfOutput> {
   doc.line(left, y, right, y);
   y += 9;
 
-  setText(T.title, C.ink, 'bold');
-  const titleLines = doc.splitTextToSize(cleanTitle(input.title), contentW) as string[];
-  titleLines.forEach((line) => {
-    doc.textWithLink(line, left, y, { url: input.contentUrl });
-    y += 6.4;
+  richParagraph(cleanTitle(input.title), T.title, C.ink, {
+    style: 'bold',
+    link: input.contentUrl,
+    leading: 6.4,
   });
   y += 1;
-  setText(T.caption, C.muted, 'normal');
-  doc.text(`Generated ${new Date().toLocaleDateString()}  ·  AI notes, summary & key points`, left, y);
-  y += 9;
+  richParagraph(
+    `Generated ${new Date().toLocaleDateString()}  ·  AI notes, summary & key points`,
+    T.caption,
+    C.muted,
+  );
+  y += 4;
 
   // --- Summary -----------------------------------------------------------
   if (input.summary) {
     sectionHeader('Summary');
-    paragraph(input.summary.replace(/\s+/g, ' ').trim(), T.lead, C.body);
+    // The AI summary is markdown; the PDF typesets plain text, so convert
+    // (bullets survive, `**`/pipes don't). Paragraph breaks are preserved.
+    richParagraph(markdownToPlainText(input.summary), T.lead, C.body);
     y += 7;
   }
 
@@ -192,11 +365,11 @@ export async function generatePdf(input: PdfInput): Promise<PdfOutput> {
     sectionHeader('Key Points');
     const indent = 6;
     input.keypoints.forEach((point) => {
-      const lines = doc.splitTextToSize(point, contentW - indent) as string[];
-      ensureSpace(lines.length * LEADING + 2);
+      const lines = layoutRich(markdownToPlainText(point), contentW - indent, T.body, 'normal');
+      ensureSpace(Math.min(lines.length, 2) * LEADING + 2);
       doc.setFillColor(C.accent[0], C.accent[1], C.accent[2]);
       doc.circle(left + 1.4, y - 1.4, 1.1, 'F');
-      drawLines(lines, left + indent, T.body, C.body);
+      drawRichLines(lines, left + indent, T.body, C.body);
       y += 2.6;
     });
     y += 6;
@@ -211,10 +384,10 @@ export async function generatePdf(input: PdfInput): Promise<PdfOutput> {
         ensureSpace(12);
         timestampPill(item.data.videoTimestamp);
         y += 7.5;
-        const lines = doc.splitTextToSize(item.data.text, contentW - 5) as string[];
         const startY = y - 4;
         const startPage = page;
-        drawLines(lines, left + 5, T.body, C.body);
+        // User notes keep their intentional line breaks (Shift+Enter).
+        richParagraph(item.data.text, T.body, C.body, { x: left + 5, width: contentW - 5 });
         // Thin accent rail spanning the note body (only when it stays on one page).
         if (page === startPage) {
           doc.setDrawColor(C.accent[0], C.accent[1], C.accent[2]);

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { limitTone } from '@/core/limits/limitService';
-import { BoltIcon, InfoIcon } from '@/ui/icons';
+import { renderMarkdown } from '@/core/markdown';
+import { ViewHeader } from '@/ui/components/ViewHeader';
+import { BoltIcon, ChatIcon, InfoIcon, SendIcon } from '@/ui/icons';
 import type { UseChat } from './useChat';
 
 interface ChatViewProps {
@@ -24,6 +26,7 @@ export function ChatView({ chat, onClose }: ChatViewProps) {
 
   const submit = () => {
     const text = input;
+    if (!text.trim() || chat.sending) return;
     setInput('');
     void chat.send(text);
   };
@@ -32,12 +35,7 @@ export function ChatView({ chat, onClose }: ChatViewProps) {
 
   return (
     <div id="clipinsights__chatContainer">
-      <div id="clipinsights__chatHeader">
-        <h4 className="clipinsights__h4">Clip Bot</h4>
-        <button className="clipinsights__button" id="clipinsights__closeChat" onClick={onClose}>
-          ✖<span className="clipinsights__btnTooltip">Close</span>
-        </button>
-      </div>
+      <ViewHeader icon={<ChatIcon />} title="Clip Bot" onClose={onClose} />
 
       <div id="clipinsights__chatStatusBar">
         <div id="clipinsights__contextInfo">
@@ -72,11 +70,15 @@ export function ChatView({ chat, onClose }: ChatViewProps) {
                   <span />
                   <span />
                 </span>
-              ) : (
+              ) : m.role === 'bot' ? (
+                // The AI answers in GitHub-flavoured markdown (bold, lists,
+                // tables, code); render it sanitized instead of as raw text.
                 <>
-                  {m.content}
+                  <div className="clipinsights__md" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
                   {isStreaming && <span className="clipinsights__caret" />}
                 </>
+              ) : (
+                m.content
               )}
             </div>
           );
@@ -84,16 +86,29 @@ export function ChatView({ chat, onClose }: ChatViewProps) {
       </div>
 
       <div id="clipinsights__chatInputContainer">
-        <input
-          type="text"
+        <textarea
           id="clipinsights__chatInput"
-          placeholder="Type a message..."
+          placeholder="Ask about this video…"
+          rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          onKeyDown={(e) => {
+            // Enter sends; Shift+Enter inserts a newline (like every chat app).
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
         />
-        <button className="clipinsights__button" id="clipinsights__sendChatBtn" disabled={chat.sending} onClick={submit}>
-          Send<span className="clipinsights__btnTooltip">Send message</span>
+        <button
+          className="clipinsights__button"
+          id="clipinsights__sendChatBtn"
+          disabled={chat.sending || !input.trim()}
+          onClick={submit}
+          aria-label="Send message"
+        >
+          <SendIcon />
+          <span className="clipinsights__btnTooltip">Send message</span>
         </button>
       </div>
     </div>

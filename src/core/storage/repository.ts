@@ -93,6 +93,20 @@ export async function getKeypoints(contentId: string): Promise<KeypointsRecord |
   return rows[0] ?? null;
 }
 
+/** Delete the cached summary and key points for a content item (regenerate/clear). */
+export function deleteInsights(contentId: string): Promise<void> {
+  const stores = [STORE.summaries, STORE.keypoints];
+  return withStore(stores, 'readwrite', async (tx) => {
+    for (const name of stores) {
+      const store = tx.objectStore(name);
+      const items = await promisifyRequest(
+        store.index('byVideoUrl').getAll(contentId) as IDBRequest<Array<{ id?: number }>>,
+      );
+      for (const item of items) if (item.id !== undefined) store.delete(item.id);
+    }
+  });
+}
+
 // --- Aggregate views -----------------------------------------------------
 
 /** Merged notes + screenshots for a content item, sorted by timestamp. */

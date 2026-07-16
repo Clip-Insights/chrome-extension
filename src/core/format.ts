@@ -57,12 +57,3 @@ export function parseKeypoints(input: unknown): string[] {
     )
     .filter((item) => item.length > 0);
 }
-
-/**
- * Convert the AI summary's lightweight markdown (`**bold**`, newlines) to HTML
- * for rendering inside the (sandboxed) shadow root. The summary is prose; key
- * points are returned separately as an array, so no list handling is needed.
- */
-export function formatSummaryToHtml(summaryText: string): string {
-  return summaryText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-}

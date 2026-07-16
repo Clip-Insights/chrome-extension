@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatSummaryToHtml, parseKeypoints } from './format';
+import { parseKeypoints } from './format';
 
 describe('parseKeypoints', () => {
   it('returns an empty array for nullish input', () => {
@@ -25,15 +25,5 @@ describe('parseKeypoints', () => {
 
   it('drops empty entries', () => {
     expect(parseKeypoints("['a', '', 'b']")).toEqual(['a', 'b']);
-  });
-});
-
-describe('formatSummaryToHtml', () => {
-  it('converts bold markdown to <strong>', () => {
-    expect(formatSummaryToHtml('hello **world**')).toContain('<strong>world</strong>');
-  });
-
-  it('converts newlines to <br>', () => {
-    expect(formatSummaryToHtml('a\nb')).toContain('a<br>b');
   });
 });

@@ -84,6 +84,7 @@ export function MainView({
         onEditNote={timeline.editNote}
         onDeleteNote={timeline.removeNote}
         onDeleteScreenshot={timeline.removeScreenshot}
+        onSeek={timeline.seekTo}
       />
 
       <div id="clipinsights__loginBtnContainer">

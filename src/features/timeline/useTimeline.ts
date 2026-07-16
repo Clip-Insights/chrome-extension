@@ -38,6 +38,8 @@ export interface UseTimeline {
   removeScreenshot: (id: number) => Promise<void>;
   editNote: (id: number, text: string) => Promise<void>;
   clearAll: () => Promise<void>;
+  /** Jump the video to a timestamp (clicking a note/screenshot time badge). */
+  seekTo: (seconds: number) => void;
 }
 
 export function useTimeline(): UseTimeline {
@@ -132,5 +134,17 @@ export function useTimeline(): UseTimeline {
     setItems([]);
   }, [ctx.contentId]);
 
-  return { items, maxNoteChars, addNote, addScreenshot, removeNote, removeScreenshot, editNote, clearAll };
+  const seekTo = useCallback(
+    (seconds: number) => {
+      const video = adapter.getVideoElement();
+      if (!video) {
+        show('No video found on this page.', 'error');
+        return;
+      }
+      video.currentTime = seconds;
+    },
+    [adapter, show],
+  );
+
+  return { items, maxNoteChars, addNote, addScreenshot, removeNote, removeScreenshot, editNote, clearAll, seekTo };
 }
