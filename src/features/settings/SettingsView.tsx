@@ -1,10 +1,9 @@
 import type { UsageCounter } from '@/core/api/client';
+import { WEB_APP_URL } from '@/core/api/env';
 import { formatResetTime } from '@/core/time';
 import { ViewHeader } from '@/ui/components/ViewHeader';
 import { LogoutIcon, SettingsIcon } from '@/ui/icons';
 import { useSettings } from './useSettings';
-
-const MANAGE_PLAN_URL = 'https://app.clipinsights.com';
 
 interface SettingsViewProps {
   onClose: () => void;
@@ -71,7 +70,7 @@ export function SettingsView({ onClose, onLogout }: SettingsViewProps) {
                   ? `$${plan.limits.monthly_price_usd}/month`
                   : 'Free plan'}
               </p>
-              <a className="clipinsights__settingsLink" href={MANAGE_PLAN_URL} target="_blank" rel="noreferrer">
+              <a className="clipinsights__settingsLink" href={WEB_APP_URL} target="_blank" rel="noreferrer">
                 Manage plan ↗
               </a>
             </div>

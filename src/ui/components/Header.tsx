@@ -1,4 +1,5 @@
-import { LOGO_SVG } from '@/assets/logo';
+import wordmark from '@/assets/wordmark.svg?raw';
+import { WEB_APP_URL } from '@/core/api/env';
 import type { AuthStatus } from '@/core/auth/session';
 import { LoginIcon, SettingsIcon } from '@/ui/icons';
 
@@ -13,10 +14,9 @@ export function Header({ authStatus, onAuthClick }: HeaderProps) {
   const label = loggedIn ? 'Settings' : 'Login';
   return (
     <div id="clipinsights__top-container">
-      <a href="https://app.clipinsights.com" target="_blank" rel="noreferrer" id="clipinsights__logo">
+      <a href={WEB_APP_URL} target="_blank" rel="noreferrer" id="clipinsights__logo" aria-label="Clip Insights web app">
         <div id="clipinsights__mainHeading">
-          <span dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
-          Clip Insights
+          <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: wordmark }} />
         </div>
       </a>
       <button id="clipinsights__loginBtn" className="clipinsights__button" onClick={onAuthClick}>
