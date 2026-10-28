@@ -10,7 +10,7 @@ Single purpose
 An extension must have a single purpose that is narrow and easy-to-understand. Learn more
 
 Single purpose description:
-This extension enhances the YouTube experience by enabling users to take synchronized notes, capture video screenshots, chat about video content and saving notes. Users are allowed to login to clipinsights.com account and send their notes to the website and will be accessible in their user space on the website.
+This extension enhances the YouTube experience by enabling users to take synchronized notes, capture video screenshots, chat about video content and saving notes. Users are allowed to login to app.clipinsights.org account and send their notes to the website and will be accessible in their user space on the website.
 In future, I will implement a paid version of the extension and all the transactions and information will be securely saved on the server side. Extension side will not be doing much things related to it.
 516/1,000516 of 1000 characters entered
 Permission justification

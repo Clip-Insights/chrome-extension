@@ -2,7 +2,7 @@
 export const API_URL: string = import.meta.env.VITE_API_URL;
 
 /** Web app base URL, for sign-up / upgrade links out of the extension. */
-export const WEB_APP_URL: string = import.meta.env.VITE_WEB_APP_URL ?? 'https://app.clipinsights.com';
+export const WEB_APP_URL: string = import.meta.env.VITE_WEB_APP_URL ?? 'https://app.clipinsights.org';
 
 /** Chrome Extension OAuth client ID for Google sign-in. */
 export const GOOGLE_EXTENSION_CLIENT_ID: string =

@@ -59,8 +59,8 @@
       </defs>
     </svg>
 
-    <script>
-      const LOGO = `<svg width="22" height="22" viewBox="0 0 28 28" fill="none"><rect x="0" y="0" width="28" height="28" rx="12" fill="#1C1C1C"/><g transform="rotate(-45 14 14) scale(0.75)"><rect x="11" y="10" width="20" height="3" fill="#FFFFFF" rx="1"/><rect x="4" y="17" width="20" height="3" fill="#FFFFFF" rx="1"/><rect x="11" y="24" width="20" height="3" fill="#FFFFFF" rx="1"/></g></svg>`;
+    <script type="module">
+      const LOGO = await fetch('./src/assets/wordmark.svg').then(response => response.text());
       const ic = (id, w = 19) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none"><use href="#${id}"/></svg>`;
       const SHOT = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#2b2f52"/><circle cx="160" cy="78" r="34" fill="#5663c9"/><rect x="60" y="130" width="200" height="10" rx="5" fill="#454b86"/></svg>');
 
@@ -68,7 +68,7 @@
         const icon = loggedIn ? ic('i-settings',14) : ic('i-login',14);
         const label = loggedIn ? 'Settings' : 'Login';
         return `<div id="clipinsights__top-container">
-          <a id="clipinsights__logo"><div id="clipinsights__mainHeading">${LOGO}Clip Insights</div></a>
+          <a id="clipinsights__logo" aria-label="Clip Insights web app"><div id="clipinsights__mainHeading"><span aria-hidden="true">${LOGO}</span></div></a>
           <button id="clipinsights__loginBtn" class="clipinsights__button">${icon}<span>${label}</span></button>
         </div>`;
       }
