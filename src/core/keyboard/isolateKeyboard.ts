@@ -15,7 +15,7 @@
  * shadow root), so our handler on the shadow root runs *after* React has
  * processed the event — typing and in-panel shortcuts keep working.
  *
- * See ARCHITECTURE.md B.6.
+ * See ARCHITECTURE.md#platform-integration.
  */
 const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
 

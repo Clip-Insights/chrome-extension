@@ -4,7 +4,7 @@ import pkg from './package.json';
 /**
  * Host match patterns for every supported learning platform.
  *
- * Adding a new platform is a three-step change (see ARCHITECTURE.md B.6):
+ * Adding a new platform is a three-step change (see ARCHITECTURE.md#platform-integration):
  *   1. Add its match pattern(s) here.
  *   2. Implement a `PlatformAdapter` under `src/platforms/<name>/`.
  *   3. Register the adapter in `src/core/platform/registry.ts`.

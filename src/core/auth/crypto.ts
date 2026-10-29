@@ -3,7 +3,7 @@ import { TOKEN_SECRET } from '@/core/api/env';
 /**
  * AES-GCM-256 encryption with a PBKDF2-derived key. Used to obfuscate JWTs in
  * localStorage. NOTE: the secret ships in the bundle, so this is obfuscation,
- * not real secrecy (ARCHITECTURE.md A.12).
+ * not real secrecy (ARCHITECTURE.md#authentication-and-limits).
  */
 
 const SALT = 'unique-salt';

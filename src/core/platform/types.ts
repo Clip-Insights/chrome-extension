@@ -1,7 +1,7 @@
 /**
  * Platform abstraction — the single seam that makes Clip Insights extensible
  * to new learning platforms. Feature and core code depend only on these types,
- * never on YouTube (or any platform) directly. See ARCHITECTURE.md B.2.
+ * never on YouTube (or any platform) directly. See ARCHITECTURE.md#platform-integration.
  */
 
 /** One caption/transcript line. */

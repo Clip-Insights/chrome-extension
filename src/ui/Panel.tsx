@@ -86,7 +86,7 @@ export function Panel() {
   }, [auth]);
 
   // Keyboard shortcuts (Ctrl+Shift+…). Latest handlers are read via a ref so the
-  // listener is attached once (ARCHITECTURE.md A.15).
+  // listener is attached once (ARCHITECTURE.md#styling-and-browser-behavior).
   const actionsRef = useRef<Record<string, () => void>>({});
   actionsRef.current = {
     S: () => void timeline.addScreenshot(),

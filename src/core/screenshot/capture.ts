@@ -14,7 +14,7 @@ const MAX_DIMENSION = 1280;
  * Capture the current frame of a video element as a JPEG data URL. Runs in the
  * content script's isolated world; YouTube media is same-origin (MSE blob URLs)
  * so the canvas is not tainted. (v3 routed this through the background SW
- * unnecessarily — see ARCHITECTURE.md A.6 / B.5.)
+ * unnecessarily — see ARCHITECTURE.md#notes-screenshots-and-storage.)
  *
  * The frame is downscaled so its longest edge is at most `MAX_DIMENSION`, which
  * keeps stored screenshots small and bounds total storage growth.

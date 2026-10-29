@@ -1,7 +1,7 @@
 /**
  * Domain record shapes. Field names (`videoUrl`, `videoTimestamp`) are preserved
  * from v3 so existing users' IndexedDB data keeps working after the upgrade
- * (ARCHITECTURE.md A.5 / B.5). `videoUrl` holds the platform-neutral `contentId`.
+ * (ARCHITECTURE.md#notes-screenshots-and-storage). `videoUrl` holds the platform-neutral `contentId`.
  */
 
 export interface NoteRecord {

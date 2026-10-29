@@ -6,7 +6,7 @@ import { mountPanel, unmountPanel } from './mount';
 /**
  * Content-script entry point. Resolves the platform adapter for the current
  * site, then mounts/unmounts the panel as the user navigates the SPA. All
- * platform-specific behaviour is delegated to the adapter (ARCHITECTURE.md B.2).
+ * platform-specific behaviour is delegated to the adapter (ARCHITECTURE.md#platform-integration).
  */
 function start(): void {
   const adapter = resolveAdapter();

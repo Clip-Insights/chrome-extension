@@ -51,7 +51,7 @@ export function useTimeline(): UseTimeline {
   useEffect(() => {
     void getTimeline(ctx.contentId).then(setItems);
     void getPlanInfo().then((info) => setMaxNoteChars(info.limits.max_note_chars));
-    // Retention cleanup, mirroring v3's per-mount purge (ARCHITECTURE.md A.11).
+    // Retention cleanup, mirroring v3's per-mount purge (ARCHITECTURE.md#notes-screenshots-and-storage).
     void purgeOldRecords();
   }, [ctx.contentId]);
 

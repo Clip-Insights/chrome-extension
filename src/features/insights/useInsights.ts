@@ -37,7 +37,7 @@ function deriveContext(summaryText: string): string {
 
 /**
  * Summary and Key Points are produced by a single backend call and cached
- * together in IndexedDB; this hook backs both views (ARCHITECTURE.md A.10).
+ * together in IndexedDB; this hook backs both views (ARCHITECTURE.md#transcript-and-ai-requests).
  * Limits are enforced by the backend; remaining counts come from the plan API.
  * Generation is explicit: views show a Generate button and call `generate()`
  * only on the user's click (never automatically), plus `regenerate`/`clear`
