@@ -4,24 +4,7 @@ Clip Insights is a Manifest V3 extension built with React 18, TypeScript, Vite, 
 
 ## Runtime structure
 
-```mermaid
-flowchart TB
-    PAGE["YouTube watch page"]
-    ADAPTER["YouTube platform adapter<br/>Video, transcript, title, navigation"]
-    CONTENT["Content entry and mount lifecycle"]
-    PANEL["React panel inside Shadow DOM"]
-    FEATURES["Feature views and hooks<br/>Timeline, insights, chat, auth, export, settings"]
-    CORE["Core services<br/>API, storage, transcript, PDF, auth, limits"]
-    IDB[("IndexedDB")]
-    API["Shared backend API"]
-    PAGE --> ADAPTER
-    ADAPTER --> CONTENT
-    CONTENT --> PANEL
-    PANEL --> FEATURES
-    FEATURES --> CORE
-    CORE --> IDB
-    CORE --> API
-```
+![Extension architecture](./docs/diagrams/extension-architecture.svg)
 
 ## Code map
 
