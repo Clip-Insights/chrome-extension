@@ -12,7 +12,7 @@ function decodeHtmlEntities(text: string): string {
 /**
  * Fetch a YouTube transcript via the Innertube player API using the ANDROID
  * client (which avoids the WEB client's PO-token requirement). Mirrors the
- * Python `youtube-transcript-api` flow. See ARCHITECTURE.md A.9.
+ * Python `youtube-transcript-api` flow. See ARCHITECTURE.md#transcript-and-ai-requests.
  */
 export async function fetchYouTubeTranscript(youtubeUrl: string): Promise<TranscriptResult> {
   try {

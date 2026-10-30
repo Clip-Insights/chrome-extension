@@ -1,7 +1,7 @@
 /**
  * IndexedDB bootstrap. The database name, version, store names, key paths and
  * `byVideoUrl` index are intentionally identical to v3 so existing users' data
- * survives the migration (ARCHITECTURE.md A.5 / B.5).
+ * survives the migration (ARCHITECTURE.md#notes-screenshots-and-storage).
  */
 
 const DB_NAME = 'YouTubeNotesDatabase';

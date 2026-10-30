@@ -7,7 +7,7 @@ import styles from '@/ui/styles.css?inline';
 /**
  * Mount the React panel inside a Shadow DOM so the host page's CSS cannot leak
  * in (and vice versa). Replaces v3's global, namespaced stylesheet approach
- * (ARCHITECTURE.md B.5).
+ * (ARCHITECTURE.md#styling-and-browser-behavior).
  */
 const HOST_ID = 'clip-insights-host';
 

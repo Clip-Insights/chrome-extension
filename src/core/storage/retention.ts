@@ -7,7 +7,7 @@ export type RetentionCounts = Record<StoreName, number>;
 /**
  * Delete records older than `thresholdMs` across all stores (default 5 days).
  * Returns how many records were removed per store. Runs on each panel mount
- * (ARCHITECTURE.md A.11).
+ * (ARCHITECTURE.md#notes-screenshots-and-storage).
  */
 export async function purgeOldRecords(
   thresholdMs: number = FIVE_DAYS_MS,

@@ -1,10 +1,12 @@
-# Clip Insights — Browser Extension
+# Clip Insights · Chrome extension
 
 React + TypeScript **Manifest V3** browser extension built with **Vite + CRXJS**. It adds a study panel to learning-platform video pages (YouTube today; the architecture supports adding more) with timestamped screenshots and notes, AI summaries and key points, AI chat about the video, transcript copy, and PDF export.
 
-The AI features are served by the [Clip Insights backend](https://github.com/Clip-Insights/backend); exported PDFs can be managed from the [web app](https://github.com/zubayr-ahmad/clip-insights-fe).
+The AI features are served by the [Clip Insights backend](https://github.com/Clip-Insights/backend); exported PDFs can be managed from the [web app](https://github.com/Clip-Insights/web-app).
 
 > For the full design — platform adapters, the IndexedDB storage schema, feature slices, and how to render/QA the styling — see **[ARCHITECTURE.md](./ARCHITECTURE.md)**. For contributor standards and the testing rule, see **[AGENTS.md](./AGENTS.md)**.
+
+[Install extension](https://chromewebstore.google.com/detail/ccgechmifoecebnimnccgahnoklklilj) · [Website](https://clipinsights.org) · [System architecture](https://github.com/Clip-Insights/.github/blob/main/docs/ARCHITECTURE.md)
 
 ## What it does
 
@@ -24,12 +26,14 @@ The AI features are served by the [Clip Insights backend](https://github.com/Cli
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 22.12+ and npm
 
 ## Setup
 
 ```bash
-npm install
+git clone https://github.com/Clip-Insights/chrome-extension.git
+cd chrome-extension
+npm ci
 ```
 
 Environment is configured in `.env` (gitignored) and can be overridden in `.env.local`:
@@ -37,6 +41,7 @@ Environment is configured in `.env` (gitignored) and can be overridden in `.env.
 | Variable | Purpose |
 |---|---|
 | `VITE_API_URL` | Backend base URL |
+| `VITE_WEB_APP_URL` | Account links; defaults to `https://app.clipinsights.org` |
 | `VITE_TOKEN_SECRET` | Obfuscation key for JWTs at rest (client-side only) |
 | `VITE_GOOGLE_EXTENSION_CLIENT_ID` | OAuth client ID for extension Google sign-in |
 
@@ -87,4 +92,5 @@ No changes to `features/*` or `core/*` are required.
 ## Related repositories
 
 - **[backend](https://github.com/Clip-Insights/backend)** — the Django REST API powering summaries, chat, transcription, and file storage
-- **[clip-insights-fe](https://github.com/zubayr-ahmad/clip-insights-fe)** — the web app where exported PDFs are managed
+- **[web-app](https://github.com/Clip-Insights/web-app)** — the web app where exported PDFs are managed
+- **[main-site](https://github.com/Clip-Insights/main-site)** — the public website and guides

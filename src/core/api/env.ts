@@ -8,5 +8,5 @@ export const WEB_APP_URL: string = import.meta.env.VITE_WEB_APP_URL ?? 'https://
 export const GOOGLE_EXTENSION_CLIENT_ID: string =
   import.meta.env.VITE_GOOGLE_EXTENSION_CLIENT_ID ?? '';
 
-/** Secret used to obfuscate JWTs at rest. Client-side only (see ARCHITECTURE.md A.12). */
+/** Secret used to obfuscate JWTs at rest. Client-side only (see ARCHITECTURE.md#authentication-and-limits). */
 export const TOKEN_SECRET: string = import.meta.env.VITE_TOKEN_SECRET;
